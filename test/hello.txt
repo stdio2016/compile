@@ -1,0 +1,11 @@
+// print hello stdio2016
+begin
+  var you : integer;
+  var good : real;
+  print "hello stdio2016";
+  you := 8+9;
+  good := 94.87;
+  if you > 01 then
+    good := good*8.7e-5;
+  end if
+end
