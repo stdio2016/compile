@@ -1,5 +1,5 @@
 %{
-#define LIST  strcat(buf , yytext)
+#define LIST  mystrcat(yytext)
 #define token(t)            {LIST; if (Opt_T) printf("<%s>\n", #t);}
 #define tokenChar(t)        {LIST; if (Opt_T) printf("<%c>\n", (t));}
 #define tokenInteger(t, i)  {LIST; if (Opt_T) printf("<%s: %d>\n", #t, (i));}
@@ -10,6 +10,8 @@ int Opt_S = 1;
 int Opt_T = 1;
 int linenum = 1;
 char buf[MAX_LINE_LENG ];
+char *buf_ptr = buf;
+void mystrcat(char *text);
 %}
 
 %%
@@ -25,9 +27,20 @@ char buf[MAX_LINE_LENG ];
         printf("%d: %s\n", linenum, buf);
       linenum++;
       buf[0] = '\0';
+      buf_ptr = buf;
     }
 .   { LIST; }
 %%
+
+void mystrcat(char *text)
+{
+  while (*text) {
+    *buf_ptr = *text;
+    buf_ptr++;
+    text++;
+  }
+  *buf_ptr = '\0';
+}
 
 int main(int argc, char *argv[])
 {
