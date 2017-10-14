@@ -13,7 +13,6 @@ char buf[MAX_LINE_LENG ];
 char *buf_ptr = buf;
 void mystrcat(char *text);
 %}
-
 %%
 "," { tokenChar(','); }
 ";" { tokenChar(';'); }
@@ -22,6 +21,31 @@ void mystrcat(char *text);
 ")" { tokenChar(')'); }
 "[" { tokenChar('['); }
 "]" { tokenChar(']'); }
+
+array   { token(KWarray); }
+begin   { token(KWbegin); }
+boolean { token(KWboolean); }
+def     { token(KWdef); }
+do      { token(KWdo); }
+else    { token(KWelas); }
+end     { token(KWend); }
+false   { token(KWfalse); }
+for     { token(KWfor); }
+integer { token(KWinteger); }
+if      { token(KWif); }
+of      { token(KWof); }
+print   { token(KWprint); }
+read    { token(KWread); }
+real    { token(KWreal); }
+string  { token(KWstring); }
+then    { token(KWthen); }
+to      { token(KWto); }
+true    { token(KWtrue); }
+return  { token(KWreturn); }
+var     { token(KWvar); }
+while   { token(KWwhile); }
+[A-Za-z][A-Za-z0-9]* { tokenString(id, yytext); }
+
 \n  {
       if (Opt_S)
         printf("%d: %s\n", linenum, buf);
@@ -29,7 +53,7 @@ void mystrcat(char *text);
       buf[0] = '\0';
       buf_ptr = buf;
     }
-.   { LIST; }
+.   { printf("\e[31mInvalid character \e[37m\"%s\"\e[31m at line %d\e[0m\n", yytext, linenum); exit(-100); LIST; }
 %%
 
 void mystrcat(char *text)
