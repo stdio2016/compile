@@ -14,6 +14,7 @@ char buf[MAX_LINE_LENG ];
 char *buf_ptr = buf;
 void mystrcat(char *text);
 %}
+%x C_COMMENT
 %%
 "," { tokenChar(','); }
 ";" { tokenChar(';'); }
@@ -63,13 +64,51 @@ var     { token(KWvar); }
 while   { token(KWwhile); }
 [A-Za-z][A-Za-z0-9]* { tokenString(id, yytext); }
 
-\n  {
+[1-9][0-9]*|0 {
+  int num = 0, i;
+  for (i = 0; yytext[i]; i++) {
+    num = num * 10 + (yytext[i] - '0');
+  }
+  tokenInteger(integer, num);
+}
+0[0-7]+ {
+  tokenString(oct_integer, yytext);
+}
+0[0-7]*[89] {
+  printf("\e[31mInvalid octal \e[37m\"%s\"\e[31m at line %d\e[0m\n", yytext, linenum); exit(-100); LIST;
+}
+
+[ \t]+ { LIST; }
+<INITIAL,C_COMMENT>\n  {
       if (Opt_S)
         printf("%d: %s\n", linenum, buf);
       linenum++;
       buf[0] = '\0';
       buf_ptr = buf;
     }
+
+"/*" { // C style comment
+  BEGIN(C_COMMENT);
+}
+<C_COMMENT>"*/" { // end of C style comment
+  LIST;
+  BEGIN(INITIAL);
+}
+<C_COMMENT>. { LIST; }
+
+"//&"[A-Z][-+].* { // pseudocomment
+  LIST;
+  char option = yytext[3];
+  char enabled = (yytext[4] == '+');
+  switch (option) {
+    case 'S': Opt_S = enabled; break;
+    case 'T': Opt_T = enabled; break;
+  }
+}
+"//".* { // C++ style comment
+  LIST;
+}
+
 .   { printf("\e[31mInvalid character \e[37m\"%s\"\e[31m at line %d\e[0m\n", yytext, linenum); exit(-100); LIST; }
 %%
 
