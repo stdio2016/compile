@@ -1,0 +1,14 @@
+/****
+aaa efw
+ er*/
+/* 123 */
+begin
+//&T-
+  var t : integer;
+//&S-
+  t := 0;
+//&S+
+//&T+
+end
+/* 
+s*/
