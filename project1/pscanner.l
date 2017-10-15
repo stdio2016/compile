@@ -4,6 +4,8 @@
 #define tokenMultiChar(t)   {LIST; if (Opt_T) printf("<%s>\n", (t));}
 #define tokenChar(t)        {LIST; if (Opt_T) printf("<%c>\n", (t));}
 #define tokenInteger(t, i)  {LIST; if (Opt_T) printf("<%s: %d>\n", #t, (i));}
+#define tokenOctInt(t, o)   {LIST; if (Opt_T) printf("<%s: %s>\n", #t, (o));}
+#define tokenFloat(t, f)    {LIST; if (Opt_T) printf("<%s: %s>\n", #t, (f));}
 #define tokenString(t, s)   {LIST; if (Opt_T) printf("<%s: %s>\n", #t, (s));}
 #define MAX_LINE_LENG  256
 
@@ -11,10 +13,12 @@ int Opt_S = 1;
 int Opt_T = 1;
 int linenum = 1;
 char buf[MAX_LINE_LENG ];
+char strlit_buf[ MAX_LINE_LENG ];
 char *buf_ptr = buf;
 void mystrcat(char *text);
 %}
 %x C_COMMENT
+float  [0-9]+\.[0-9]+
 %%
 "," { tokenChar(','); }
 ";" { tokenChar(';'); }
@@ -72,10 +76,32 @@ while   { token(KWwhile); }
   tokenInteger(integer, num);
 }
 0[0-7]+ {
-  tokenString(oct_integer, yytext);
+  tokenOctInt(oct_integer, yytext);
 }
 0[0-7]*[89] {
   printf("\e[31mInvalid octal \e[37m\"%s\"\e[31m at line %d\e[0m\n", yytext, linenum); exit(-100); LIST;
+}
+{float} {
+  tokenFloat(float, yytext);
+}
+{float}[eE][-+]?[0-9]+ {
+  tokenFloat(scientific, yytext);
+}
+\"([^"\n]|\"\")*\" {
+  int i, j = 0;
+  for (i = 1; yytext[i+1]; i++) {
+    strlit_buf[j++] = yytext[i];
+    if (yytext[i] == '"') {
+      i++;
+    }
+  }
+  strlit_buf[j] = '\0';
+  tokenString(string, strlit_buf);
+}
+\"([^"\n]|\"\")*\n {
+  printf("\e[31mString should not contain newline at line %d\e[0m\n", linenum);
+  exit(-100);
+  LIST;
 }
 
 [ \t]+ { LIST; }
