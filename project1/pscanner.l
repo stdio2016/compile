@@ -1,6 +1,7 @@
 %{
 #define LIST  mystrcat(yytext)
 #define token(t)            {LIST; if (Opt_T) printf("<%s>\n", #t);}
+#define tokenMultiChar(t)   {LIST; if (Opt_T) printf("<%s>\n", (t));}
 #define tokenChar(t)        {LIST; if (Opt_T) printf("<%c>\n", (t));}
 #define tokenInteger(t, i)  {LIST; if (Opt_T) printf("<%s: %d>\n", #t, (i));}
 #define tokenString(t, s)   {LIST; if (Opt_T) printf("<%s: %s>\n", #t, (s));}
@@ -21,6 +22,22 @@ void mystrcat(char *text);
 ")" { tokenChar(')'); }
 "[" { tokenChar('['); }
 "]" { tokenChar(']'); }
+
+"+" { tokenChar('+'); }
+"-" { tokenChar('-'); }
+"*" { tokenChar('*'); }
+"/" { tokenChar('/'); }
+mod { token(mod); }
+":="    { tokenMultiChar(":="); }
+"<"     { tokenChar('<'); }
+"<="    { tokenMultiChar("<="); }
+"<>"    { tokenMultiChar("<>"); }
+">="    { tokenMultiChar(">="); }
+">"     { tokenChar('>'); }
+"="     { tokenChar('='); }
+and     { token(and); }
+or      { token(or); }
+not     { token(not); }
 
 array   { token(KWarray); }
 begin   { token(KWbegin); }
