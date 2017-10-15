@@ -78,7 +78,7 @@ while   { token(KWwhile); }
 0[0-7]+ {
   tokenOctInt(oct_integer, yytext);
 }
-0[0-7]*[89] {
+0[0-7]*[89][0-9]* {
   printf("\e[31mInvalid octal \e[37m\"%s\"\e[31m at line %d\e[0m\n", yytext, linenum); exit(-100); LIST;
 }
 {float} {
@@ -98,8 +98,8 @@ while   { token(KWwhile); }
   strlit_buf[j] = '\0';
   tokenString(string, strlit_buf);
 }
-\"([^"\n]|\"\")*\n {
-  printf("\e[31mString should not contain newline at line %d\e[0m\n", linenum);
+\"([^"\n]|\"\")*/\n {
+  printf("\e[31mUnterminated string literal at line %d\e[0m\n", linenum);
   exit(-100);
   LIST;
 }
@@ -114,6 +114,7 @@ while   { token(KWwhile); }
     }
 
 "/*" { // C style comment
+  LIST;
   BEGIN(C_COMMENT);
 }
 <C_COMMENT>"*/" { // end of C style comment
@@ -121,7 +122,11 @@ while   { token(KWwhile); }
   BEGIN(INITIAL);
 }
 <C_COMMENT>. { LIST; }
-
+<C_COMMENT><<EOF>> {
+  printf("\e[31mUnterminated C-style comment at file end\e[0m\n");
+  LIST;
+  BEGIN(INITIAL);
+}
 "//&"[A-Z][-+].* { // pseudocomment
   LIST;
   char option = yytext[3];
