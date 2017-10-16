@@ -85,7 +85,7 @@ while   { token(KWwhile); }
 {float} {
   tokenFloat(float, yytext);
 }
-{float}[eE][-+]?[0-9]+ {
+({float}|[0-9]+)[eE][-+]?[0-9]+ {
   tokenFloat(scientific, yytext);
 }
 \"([^"\n]|\"\")*\" {
