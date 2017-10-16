@@ -78,7 +78,7 @@ while   { token(KWwhile); }
 0[0-7]+ {
   tokenOctInt(oct_integer, yytext);
 }
-0[0-7]*[89][0-9]* {
+0[0-9]+ {
   printf("\e[31mInvalid octal \e[37m\"%s\"\e[31m at line %d\e[0m\n", yytext, linenum); exit(-100); LIST;
 }
 {float} {
