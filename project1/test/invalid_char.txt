@@ -1,0 +1,3 @@
+begin
+  var april_fools: real;
+end

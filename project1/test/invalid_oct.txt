@@ -1,0 +1,4 @@
+begin
+  var a : integer;
+  a := 0800 - 072 - 000;
+end

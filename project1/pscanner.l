@@ -79,7 +79,8 @@ while   { token(KWwhile); }
   tokenOctInt(oct_integer, yytext);
 }
 0[0-9]+ {
-  printf("\e[31mInvalid octal \e[37m\"%s\"\e[31m at line %d\e[0m\n", yytext, linenum); exit(-100); LIST;
+  printf("error at line %d: invalid octal \"%s\"\n", linenum, yytext);
+  exit(-100);
 }
 {float} {
   tokenFloat(float, yytext);
@@ -99,9 +100,8 @@ while   { token(KWwhile); }
   tokenString(string, strlit_buf);
 }
 \"([^"\n]|\"\")*/\n {
-  printf("\e[31mUnterminated string literal at line %d\e[0m\n", linenum);
+  printf("error at line %d: unterminated string literal\n", linenum);
   exit(-100);
-  LIST;
 }
 
 [ \t]+ { LIST; }
@@ -123,7 +123,7 @@ while   { token(KWwhile); }
 }
 <C_COMMENT>. { LIST; }
 <C_COMMENT><<EOF>> {
-  printf("\e[31mUnterminated C-style comment at file end\e[0m\n");
+  printf("error at end of file: unterminated C-style comment\n");
   LIST;
   BEGIN(INITIAL);
 }
@@ -140,7 +140,10 @@ while   { token(KWwhile); }
   LIST;
 }
 
-.   { printf("\e[31mInvalid character \e[37m\"%s\"\e[31m at line %d\e[0m\n", yytext, linenum); exit(-100); LIST; }
+.   {
+  printf("error at line %d: bad character \"%s\"\n", linenum, yytext);
+  exit(-100);
+}
 %%
 
 void mystrcat(char *text)
