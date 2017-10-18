@@ -3,9 +3,6 @@
 #define token(t)            {LIST; if (Opt_T) printf("<%s>\n", #t);}
 #define tokenMultiChar(t)   {LIST; if (Opt_T) printf("<%s>\n", (t));}
 #define tokenChar(t)        {LIST; if (Opt_T) printf("<%c>\n", (t));}
-#define tokenInteger(t, i)  {LIST; if (Opt_T) printf("<%s: %d>\n", #t, (i));}
-#define tokenOctInt(t, o)   {LIST; if (Opt_T) printf("<%s: %s>\n", #t, (o));}
-#define tokenFloat(t, f)    {LIST; if (Opt_T) printf("<%s: %s>\n", #t, (f));}
 #define tokenString(t, s)   {LIST; if (Opt_T) printf("<%s: %s>\n", #t, (s));}
 #define MAX_LINE_LENG  256
 
@@ -15,7 +12,7 @@ int linenum = 1;
 char buf[MAX_LINE_LENG ];
 char strlit_buf[ MAX_LINE_LENG ];
 char *buf_ptr = buf;
-void mystrcat(char *text);
+void mystrcat(const char *text);
 %}
 %x C_COMMENT
 float  [0-9]+\.[0-9]+
@@ -69,24 +66,20 @@ while   { token(KWwhile); }
 [A-Za-z][A-Za-z0-9]* { tokenString(id, yytext); }
 
 [1-9][0-9]*|0 {
-  int num = 0, i;
-  for (i = 0; yytext[i]; i++) {
-    num = num * 10 + (yytext[i] - '0');
-  }
-  tokenInteger(integer, num);
+  tokenString(integer, yytext);
 }
 0[0-7]+ {
-  tokenOctInt(oct_integer, yytext);
+  tokenString(oct_integer, yytext);
 }
 0[0-9]+ {
   printf("error at line %d: invalid octal \"%s\"\n", linenum, yytext);
   exit(-100);
 }
 {float} {
-  tokenFloat(float, yytext);
+  tokenString(float, yytext);
 }
 ({float}|[0-9]+)[eE][-+]?[0-9]+ {
-  tokenFloat(scientific, yytext);
+  tokenString(scientific, yytext);
 }
 \"([^"\n]|\"\")*\" {
   int i, j = 0;
@@ -146,7 +139,7 @@ while   { token(KWwhile); }
 }
 %%
 
-void mystrcat(char *text)
+void mystrcat(const char *text)
 {
   while (*text) {
     *buf_ptr = *text;
