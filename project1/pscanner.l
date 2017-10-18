@@ -98,7 +98,7 @@ while   { token(KWwhile); }
 }
 
 [ \t]+ { LIST; }
-<INITIAL,C_COMMENT>\n  {
+<INITIAL,C_COMMENT>\r?\n  {
       if (Opt_S)
         printf("%d: %s\n", linenum, buf);
       linenum++;
