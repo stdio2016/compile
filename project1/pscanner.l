@@ -71,10 +71,6 @@ while   { token(KWwhile); }
 0[0-7]+ {
   tokenString(oct_integer, yytext);
 }
-0[0-9]+ {
-  printf("error at line %d: invalid octal \"%s\"\n", linenum, yytext);
-  exit(-100);
-}
 {float} {
   tokenString(float, yytext);
 }
