@@ -88,7 +88,7 @@ while   { token(KWwhile); }
   strlit_buf[j] = '\0';
   tokenString(string, strlit_buf);
 }
-\"([^"\n]|\"\")*/\n {
+\"([^"\n]|\"\")* {
   printf("error at line %d: unterminated string literal\n", linenum);
   exit(-100);
 }
@@ -101,7 +101,11 @@ while   { token(KWwhile); }
       buf[0] = '\0';
       buf_ptr = buf;
     }
-
+<INITIAL><<EOF>>  {
+      if (Opt_S && buf_ptr != buf)
+        printf("%d: %s\n", linenum, buf);
+      return 0;
+    }
 "/*" { // C style comment
   LIST;
   BEGIN(C_COMMENT);
