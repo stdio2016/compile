@@ -42,28 +42,28 @@ and     { token(and); }
 or      { token(or); }
 not     { token(not); }
 
-array   { token(KWarray); }
-begin   { token(KWbegin); }
-boolean { token(KWboolean); }
-def     { token(KWdef); }
-do      { token(KWdo); }
-else    { token(KWelas); }
+array   { token(KWarray); return ARRAY; }
+begin   { token(KWbegin); return BEGIN_; }
+boolean { token(KWboolean); return BOOLEAN; }
+def     { token(KWdef); return DEF; }
+do      { token(KWdo); return DO; }
+else    { token(KWelas); return ELSE; }
 end     { token(KWend); return END; }
-false   { token(KWfalse); }
-for     { token(KWfor); }
-integer { token(KWinteger); }
-if      { token(KWif); }
-of      { token(KWof); }
-print   { token(KWprint); }
-read    { token(KWread); }
-real    { token(KWreal); }
-string  { token(KWstring); }
-then    { token(KWthen); }
-to      { token(KWto); }
-true    { token(KWtrue); }
-return  { token(KWreturn); }
-var     { token(KWvar); }
-while   { token(KWwhile); }
+false   { token(KWfalse); return FALSE; }
+for     { token(KWfor); return FOR; }
+integer { token(KWinteger); return INTEGER; }
+if      { token(KWif); return IF; }
+of      { token(KWof); return OF; }
+print   { token(KWprint); return PRINT; }
+read    { token(KWread); return READ; }
+real    { token(KWreal); return REAL; }
+string  { token(KWstring); return STRING; }
+then    { token(KWthen); return THEN; }
+to      { token(KWto); return TO; }
+true    { token(KWtrue); return TRUE; }
+return  { token(KWreturn); return RETURN; }
+var     { token(KWvar); return VAR; }
+while   { token(KWwhile); return WHILE; }
 [A-Za-z][A-Za-z0-9]* { tokenString(id, yytext); return IDENT; }
 
 [1-9][0-9]*|0 {
