@@ -1,4 +1,5 @@
 %{
+#include "y.tab.h"
 #define LIST  mystrcat(yytext)
 #define token(t)            {LIST; if (Opt_T) printf("<%s>\n", #t);}
 #define tokenMultiChar(t)   {LIST; if (Opt_T) printf("<%s>\n", (t));}
@@ -18,7 +19,7 @@ void mystrcat(const char *text);
 float  [0-9]+\.[0-9]+
 %%
 "," { tokenChar(','); }
-";" { tokenChar(';'); }
+";" { tokenChar(';'); return SEMICOLON; }
 ":" { tokenChar(':'); }
 "(" { tokenChar('('); }
 ")" { tokenChar(')'); }
@@ -47,7 +48,7 @@ boolean { token(KWboolean); }
 def     { token(KWdef); }
 do      { token(KWdo); }
 else    { token(KWelas); }
-end     { token(KWend); }
+end     { token(KWend); return END; }
 false   { token(KWfalse); }
 for     { token(KWfor); }
 integer { token(KWinteger); }
@@ -63,7 +64,7 @@ true    { token(KWtrue); }
 return  { token(KWreturn); }
 var     { token(KWvar); }
 while   { token(KWwhile); }
-[A-Za-z][A-Za-z0-9]* { tokenString(id, yytext); }
+[A-Za-z][A-Za-z0-9]* { tokenString(id, yytext); return IDENT; }
 
 [1-9][0-9]*|0 {
   tokenString(integer, yytext);
@@ -149,20 +150,3 @@ void mystrcat(const char *text)
   *buf_ptr = '\0';
 }
 
-int main(int argc, char *argv[])
-{
-  if ( argc != 2 ) {
-    fprintf( stderr, "Usage: ./pscanner [filename]\n" );
-    exit(1);
-  }
-
-  FILE *f = fopen( argv[1], "r" );
-  if ( f == NULL ) {
-    fprintf( stderr, "Unable to open \"%s\" ;-( Does this file exist?\n", argv[1] );
-    exit(-1);
-  }
-
-  yyin = f;
-  yylex();
-  return 0;
-}
