@@ -45,7 +45,7 @@ program		: programname SEMICOLON programbody END IDENT
 programname	: identifier
 		;
 
-programbody	: var_or_const_decls
+programbody	: var_or_const_decls  function_decls  compound_stmt
 		;
 
 var_or_const_decls :
@@ -65,6 +65,54 @@ const_decl :
 identifier_list :
   identifier
 | identifier_list COMMA identifier
+;
+
+function_decls :
+  /* empty */
+| function_decls  function_decl
+;
+
+function_decl :
+  function_name LPAREN formal_args RPAREN function_type SEMICOLON
+  function_body END IDENT
+;
+
+function_type :
+  COLON type
+| /* procedure has no type */
+;
+
+function_name : identifier
+;
+
+formal_args :
+  /* no args */
+| formal_args_list
+;
+
+formal_args_list :
+  formal_arg
+| formal_args_list COMMA formal_arg
+;
+
+formal_arg : identifier_list COLON type
+;
+
+function_body : compound_stmt
+;
+
+compound_stmt :
+  BEGIN_  var_or_const_decls  statements END
+;
+
+statements :
+  /* empty */
+| statements statement
+;
+
+statement :
+  compound_stmt
+// TODO: more statements
 ;
 
 literal_constant :
