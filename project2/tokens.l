@@ -18,13 +18,13 @@ void mystrcat(const char *text);
 %x C_COMMENT
 float  [0-9]+\.[0-9]+
 %%
-"," { tokenChar(','); }
+"," { tokenChar(','); return COMMA; }
 ";" { tokenChar(';'); return SEMICOLON; }
-":" { tokenChar(':'); }
-"(" { tokenChar('('); }
-")" { tokenChar(')'); }
-"[" { tokenChar('['); }
-"]" { tokenChar(']'); }
+":" { tokenChar(':'); return COLON; }
+"(" { tokenChar('('); return LPAREN; }
+")" { tokenChar(')'); return RPAREN; }
+"[" { tokenChar('['); return LBRACKET; }
+"]" { tokenChar(']'); return RBRACKET; }
 
 "+" { tokenChar('+'); }
 "-" { tokenChar('-'); }

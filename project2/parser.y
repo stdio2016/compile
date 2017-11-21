@@ -11,13 +11,20 @@ int yyerror( char *msg );
 extern int yylex(void);
 %}
 
-%token SEMICOLON IDENT
+// delimiters
+%token COMMA SEMICOLON COLON
+%token LPAREN RPAREN // ( )
+%token LBRACKET RBRACKET // [ ]
+
+// keywords
 %token ARRAY BOOLEAN INTEGER REAL STRING
 %token FALSE TRUE
 %token DEF
 %token DO ELSE END FOR IF OF PRINT READ THEN TO RETURN VAR WHILE
 // rename to BEGIN_ because BEGIN is a keyword in lex
 %token BEGIN_
+
+%token IDENT
 %%
 
 program		: programname SEMICOLON programbody END IDENT
