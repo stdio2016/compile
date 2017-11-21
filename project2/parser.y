@@ -24,6 +24,17 @@ extern int yylex(void);
 // rename to BEGIN_ because BEGIN is a keyword in lex
 %token BEGIN_
 
+// operators
+%token ASSIGN
+%left OR
+%left AND
+%token NOT
+%left LESS LEQUAL NOTEQUAL GEQUAL GREATER EQUAL
+%left PLUS MINUS
+%left MULTIPLY DIVIDE MOD
+
+// literals
+%token INT_LIT STR_LIT REAL_LIT
 %token IDENT
 %%
 

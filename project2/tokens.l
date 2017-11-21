@@ -26,21 +26,21 @@ float  [0-9]+\.[0-9]+
 "[" { tokenChar('['); return LBRACKET; }
 "]" { tokenChar(']'); return RBRACKET; }
 
-"+" { tokenChar('+'); }
-"-" { tokenChar('-'); }
-"*" { tokenChar('*'); }
-"/" { tokenChar('/'); }
-mod { token(mod); }
-":="    { tokenMultiChar(":="); }
-"<"     { tokenChar('<'); }
-"<="    { tokenMultiChar("<="); }
-"<>"    { tokenMultiChar("<>"); }
-">="    { tokenMultiChar(">="); }
-">"     { tokenChar('>'); }
-"="     { tokenChar('='); }
-and     { token(and); }
-or      { token(or); }
-not     { token(not); }
+"+" { tokenChar('+'); return PLUS; }
+"-" { tokenChar('-'); return MINUS; }
+"*" { tokenChar('*'); return MULTIPLY; }
+"/" { tokenChar('/'); return DIVIDE; }
+mod { token(mod); return MOD; }
+":="    { tokenMultiChar(":="); return ASSIGN; }
+"<"     { tokenChar('<'); return LESS; }
+"<="    { tokenMultiChar("<="); return LEQUAL; }
+"<>"    { tokenMultiChar("<>"); return NOTEQUAL; }
+">="    { tokenMultiChar(">="); return GEQUAL; }
+">"     { tokenChar('>'); return GREATER; }
+"="     { tokenChar('='); return EQUAL; }
+and     { token(and); return AND; }
+or      { token(or); return OR; }
+not     { token(not); return NOT; }
 
 array   { token(KWarray); return ARRAY; }
 begin   { token(KWbegin); return BEGIN_; }
@@ -68,15 +68,19 @@ while   { token(KWwhile); return WHILE; }
 
 [1-9][0-9]*|0 {
   tokenString(integer, yytext);
+  return INT_LIT;
 }
 0[0-7]+ {
   tokenString(oct_integer, yytext);
+  return INT_LIT;
 }
 {float} {
   tokenString(float, yytext);
+  return REAL_LIT;
 }
 ({float}|[0-9]+)[eE][-+]?[0-9]+ {
   tokenString(scientific, yytext);
+  return REAL_LIT;
 }
 \"([^"\n]|\"\")*\" {
   int i, j = 0;
@@ -88,6 +92,7 @@ while   { token(KWwhile); return WHILE; }
   }
   strlit_buf[j] = '\0';
   tokenString(string, strlit_buf);
+  return STR_LIT;
 }
 \"([^"\n]|\"\")* {
   printf("error at line %d: unterminated string literal\n", linenum);
