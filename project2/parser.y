@@ -28,10 +28,11 @@ extern int yylex(void);
 %token ASSIGN
 %left OR
 %left AND
-%token NOT
+%right NOT
 %left LESS LEQUAL NOTEQUAL GEQUAL GREATER EQUAL
 %left PLUS MINUS
 %left MULTIPLY DIVIDE MOD
+%right UMINUS // unary minus '-'
 
 // literals
 %token INT_LIT STR_LIT REAL_LIT
@@ -58,12 +59,20 @@ var_decl :
 ;
 
 const_decl :
-  VAR // TODO
+  VAR identifier_list COLON literal_constant SEMICOLON
 ;
 
 identifier_list :
   identifier
 | identifier_list COMMA identifier
+;
+
+literal_constant :
+  STR_LIT
+| integer_constant
+| REAL_LIT
+| TRUE
+| FALSE
 ;
 
 type :

@@ -15,7 +15,7 @@ y.tab.c y.tab.h: parser.y
 lex.yy.c: tokens.l
 	$(LEX) $<
 y.tab.o: y.tab.c
-lex.yy.o: lex.yy.c
+lex.yy.o: lex.yy.c y.tab.h
 
 .PHONY: clean
 clean:
