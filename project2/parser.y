@@ -44,8 +44,42 @@ program		: programname SEMICOLON programbody END IDENT
 programname	: identifier
 		;
 
-programbody	:
+programbody	: var_or_const_decls
 		;
+
+var_or_const_decls :
+  /* empty */
+| var_or_const_decls var_decl
+| var_or_const_decls const_decl
+;
+
+var_decl :
+  VAR identifier_list COLON type SEMICOLON
+;
+
+const_decl :
+  VAR // TODO
+;
+
+identifier_list :
+  identifier
+| identifier_list COMMA identifier
+;
+
+type :
+  scalar_type
+| ARRAY integer_constant TO integer_constant OF type
+;
+
+scalar_type :
+  BOOLEAN
+| INTEGER
+| REAL
+| STRING
+;
+
+integer_constant : INT_LIT
+;
 
 identifier	: IDENT
 		;
