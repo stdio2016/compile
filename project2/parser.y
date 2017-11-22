@@ -113,7 +113,11 @@ statements :
 statement :
   compound_stmt
 | simple_stmt
-// TODO: more statements
+| conditional_stmt
+| while_stmt
+| for_stmt
+| return_stmt
+| procedure_call
 ;
 
 simple_stmt :
@@ -171,6 +175,39 @@ arg_list :
 arguments :
   expression
 | arguments COMMA expression
+;
+
+conditional_stmt :
+  IF boolean_expr THEN
+  statements
+  ELSE
+  statements
+  END IF
+|
+  IF boolean_expr THEN
+  statements
+  END IF
+;
+
+boolean_expr : expression
+;
+
+while_stmt :
+  WHILE boolean_expr DO
+  statements
+  END DO
+;
+
+for_stmt :
+  FOR identifier ASSIGN integer_constant TO integer_constant DO
+  statements
+  END DO
+;
+
+return_stmt : RETURN expression SEMICOLON
+;
+
+procedure_call : function_invoc SEMICOLON
 ;
 
 literal_constant :
