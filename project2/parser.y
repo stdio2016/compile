@@ -112,12 +112,76 @@ statements :
 
 statement :
   compound_stmt
+| simple_stmt
 // TODO: more statements
 ;
 
+simple_stmt :
+  variable_reference ASSIGN expression SEMICOLON
+| PRINT expression SEMICOLON
+| READ variable_reference SEMICOLON
+;
+
+variable_reference :
+  identifier
+| array_reference
+;
+
+array_reference :
+  identifier LBRACKET integer_expression RBRACKET
+| array_reference LBRACKET integer_expression RBRACKET
+;
+
+integer_expression : expression
+;
+
+expression :
+  LPAREN expression RPAREN
+| literal_constant_no_minus
+| variable_reference
+| function_invoc
+
+| MINUS expression %prec UMINUS
+| expression MULTIPLY expression
+| expression DIVIDE   expression
+| expression MOD      expression
+| expression PLUS  expression
+| expression MINUS expression
+
+| expression LESS     expression
+| expression LEQUAL   expression
+| expression EQUAL    expression
+| expression GEQUAL   expression
+| expression GREATER  expression
+| expression NOTEQUAL expression
+
+| NOT expression
+| expression AND expression
+| expression OR expression
+;
+
+function_invoc : identifier LPAREN arg_list RPAREN
+;
+
+arg_list :
+  /* no arguments */
+| arguments
+;
+
+arguments :
+  expression
+| arguments COMMA expression
+;
+
 literal_constant :
+  literal_constant_no_minus
+| MINUS INT_LIT
+| MINUS REAL_LIT
+;
+
+literal_constant_no_minus :
   STR_LIT
-| integer_constant
+| INT_LIT
 | REAL_LIT
 | TRUE
 | FALSE
@@ -135,7 +199,9 @@ scalar_type :
 | STRING
 ;
 
-integer_constant : INT_LIT
+// must be positive
+integer_constant :
+  INT_LIT
 ;
 
 identifier	: IDENT
