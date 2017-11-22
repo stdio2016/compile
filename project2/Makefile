@@ -1,6 +1,6 @@
 ALL = parser
 OBJS = y.tab.o lex.yy.o
-LIBS = -ll
+LIBS = -lfl
 CC = gcc
 YACC = yacc
 LEX = lex

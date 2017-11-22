@@ -16,3 +16,15 @@
 
 1. 在開頭處 `#include "y.tab.h"`，這樣才能使用 yacc parser 裡的 token 名稱
 2. 除了空格和註解外，在每個 token 規則的動作都加上 `return <token>;`
+
+## 執行平台
+
+Ubuntu 17.10 和系計中的 Linux 主機 (我只測試過這兩個)
+
+## 執行方法
+
+首先，你需要安裝 lex 和 yacc。可以用 flex 取代 lex，bison 取代 yacc。
+
+然後進入這個資料夾，輸入 `make`，就可以編譯這個程式
+
+這個程式的命令列格式是 `./parser <檔案名>`
