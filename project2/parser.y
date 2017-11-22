@@ -226,7 +226,7 @@ literal_constant_no_minus :
 
 type :
   scalar_type
-| ARRAY integer_constant TO integer_constant OF type
+| ARRAY positive_integer_constant TO positive_integer_constant OF type
 ;
 
 scalar_type :
@@ -237,8 +237,13 @@ scalar_type :
 ;
 
 // must be positive
+positive_integer_constant :
+  INT_LIT
+;
+
 integer_constant :
   INT_LIT
+| MINUS INT_LIT
 ;
 
 identifier	: IDENT
