@@ -37,6 +37,8 @@ extern int yylex(void);
 // literals
 %token INT_LIT STR_LIT REAL_LIT
 %token IDENT
+// token error
+%token ERROR
 %%
 
 program		: programname SEMICOLON programbody END IDENT

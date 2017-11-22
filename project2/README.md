@@ -11,6 +11,7 @@
     如果不符合語法，就會輸出錯誤的位置和錯誤 token
 
 4. 不會檢查型別，因為這不是 context free 的範疇
+5. 遇到錯誤的 token，會顯示 token 發生何種錯誤
 
 ## 對上次 scanner 作業修改的地方
 
@@ -25,6 +26,10 @@ Ubuntu 17.10 和系計中的 Linux 主機 (我只測試過這兩個)
 
 首先，你需要安裝 lex 和 yacc。可以用 flex 取代 lex，bison 取代 yacc。
 
-然後進入這個資料夾，輸入 `make`，就可以編譯這個程式
+然後進入這個資料夾，在命令列輸入 `make`，就可以編譯這個程式
 
 這個程式的命令列格式是 `./parser <檔案名>`
+
+執行後，如果檔案是語法正確的 P 程式，就會顯示 `There is no syntactic error!`
+
+要清除編譯中間檔，請在命令列輸入 `make clean`

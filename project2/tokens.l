@@ -5,6 +5,7 @@
 #define tokenMultiChar(t)   {LIST; if (Opt_T) printf("<%s>\n", (t));}
 #define tokenChar(t)        {LIST; if (Opt_T) printf("<%c>\n", (t));}
 #define tokenString(t, s)   {LIST; if (Opt_T) printf("<%s: %s>\n", #t, (s));}
+#define tokenError()   {LIST; return ERROR;}
 #define MAX_LINE_LENG  256
 
 int Opt_S = 1;
@@ -96,7 +97,7 @@ while   { token(KWwhile); return WHILE; }
 }
 \"([^"\n]|\"\")* {
   printf("error at line %d: unterminated string literal\n", linenum);
-  exit(-100);
+  tokenError();
 }
 
 [ \t]+ { LIST; }
@@ -141,7 +142,7 @@ while   { token(KWwhile); return WHILE; }
 
 .   {
   printf("error at line %d: bad character \"%s\"\n", linenum, yytext);
-  exit(-100);
+  tokenError();
 }
 %%
 
