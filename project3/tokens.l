@@ -10,6 +10,7 @@
 
 int Opt_S = 1;
 int Opt_T = 1;
+int Opt_D = 1;
 int linenum = 1;
 char buf[MAX_LINE_LENG ];
 char strlit_buf[ MAX_LINE_LENG ];
@@ -65,7 +66,14 @@ true    { token(KWtrue); return TRUE; }
 return  { token(KWreturn); return RETURN; }
 var     { token(KWvar); return VAR; }
 while   { token(KWwhile); return WHILE; }
-[A-Za-z][A-Za-z0-9]* { tokenString(id, yytext); return IDENT; }
+[A-Za-z][A-Za-z0-9]* {
+  tokenString(id, yytext);
+  size_t n = yyleng;
+  char *nstr = malloc(n + 1);
+  strcpy(nstr, yytext);
+  yylval.name = nstr;
+  return IDENT;
+}
 
 [1-9][0-9]*|0 {
   tokenString(integer, yytext);
@@ -134,6 +142,7 @@ while   { token(KWwhile); return WHILE; }
   switch (option) {
     case 'S': Opt_S = enabled; break;
     case 'T': Opt_T = enabled; break;
+    case 'D': Opt_D = enabled; break;
   }
 }
 "//".* { // C++ style comment

@@ -1,15 +1,22 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include "symtable.h"
 
-extern int linenum;             /* declared in lex.l */
+extern int linenum;             /* declared in tokens.l */
 extern FILE *yyin;              /* declared by lex */
 extern char *yytext;            /* declared by lex */
-extern char buf[256];           /* declared in lex.l */
+extern char buf[256];           /* declared in tokens.l */
+extern int Opt_D;               /* declared in tokens.l */
 
 int yyerror( char *msg );
 extern int yylex(void);
 %}
+
+%union {
+  char *name;
+  struct Type *type;
+}
 
 // delimiters
 %token COMMA SEMICOLON COLON
@@ -36,7 +43,7 @@ extern int yylex(void);
 
 // literals
 %token INT_LIT STR_LIT REAL_LIT
-%token IDENT
+%token<name> IDENT
 // token error
 %token ERROR
 %%
@@ -44,7 +51,7 @@ extern int yylex(void);
 program		: programname SEMICOLON programbody END IDENT
 		;
 
-programname	: identifier
+programname	: identifier { addSymbol($<name>1, SymbolKind_program); }
 		;
 
 programbody	: var_or_const_decls  function_decls  compound_stmt
@@ -57,16 +64,20 @@ var_or_const_decls :
 ;
 
 var_decl :
-  VAR identifier_list COLON type SEMICOLON
+  VAR startVarDecl identifier_list COLON type SEMICOLON
 ;
 
 const_decl :
-  VAR identifier_list COLON literal_constant SEMICOLON
+  VAR startVarDecl identifier_list COLON literal_constant SEMICOLON
 ;
 
+startVarDecl: {
+  startVarDecl();
+};
+
 identifier_list :
-  identifier
-| identifier_list COMMA identifier
+  identifier { addSymbol($<name>1, SymbolKind_variable); }
+| identifier_list COMMA identifier { addSymbol($<name>3, SymbolKind_variable); }
 ;
 
 function_decls :
@@ -84,8 +95,7 @@ function_type :
 | /* procedure has no type */
 ;
 
-function_name : identifier
-;
+function_name : identifier { addSymbol($<name>1, SymbolKind_function); };
 
 formal_args :
   /* no args */
@@ -94,7 +104,7 @@ formal_args :
 
 formal_args_list :
   formal_arg
-| formal_args_list COMMA formal_arg
+| formal_args_list SEMICOLON formal_arg
 ;
 
 formal_arg : identifier_list COLON type
@@ -248,7 +258,7 @@ integer_constant :
 | MINUS INT_LIT
 ;
 
-identifier	: IDENT
+identifier	: IDENT { $<name>$ = $1; }
 		;
 
 %%
@@ -278,6 +288,7 @@ int  main( int argc, char **argv )
 	}
 	
 	yyin = fp;
+	initSymTable();
 	yyparse();
 
 	fprintf( stdout, "\n" );
