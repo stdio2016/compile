@@ -44,16 +44,22 @@ extern int yylex(void);
 %left MULTIPLY DIVIDE MOD
 
 // literals
-%token<literal> INT_LIT STR_LIT REAL_LIT
+%token<lit> INT_LIT STR_LIT REAL_LIT
 %token<name> IDENT
 // token error
 %token ERROR
+
+// non-terminals with type
+%type<lit> literal_constant integer_constant positive_integer_constant
+%type<name> identifier
+%type<typeEnum> scalar_type
+%type<type> type
 %%
 
 program		: programname SEMICOLON programbody END IDENT
 		;
 
-programname	: identifier { addSymbol($<name>1, SymbolKind_program); }
+programname	: identifier { addSymbol($1, SymbolKind_program); }
 		;
 
 programbody	: var_or_const_decls  function_decls  compound_stmt
@@ -78,8 +84,8 @@ startVarDecl: {
 };
 
 identifier_list :
-  identifier { addSymbol($<name>1, SymbolKind_variable); }
-| identifier_list COMMA identifier { addSymbol($<name>3, SymbolKind_variable); }
+  identifier { addSymbol($1, SymbolKind_variable); }
+| identifier_list COMMA identifier { addSymbol($3, SymbolKind_variable); }
 ;
 
 function_decls :
@@ -97,7 +103,7 @@ function_type :
 | /* procedure has no type */
 ;
 
-function_name : identifier { addSymbol($<name>1, SymbolKind_function); };
+function_name : identifier { addSymbol($1, SymbolKind_function); };
 
 formal_args :
   /* no args */
@@ -233,35 +239,35 @@ literal_constant :
 | STR_LIT
 | REAL_LIT
 | MINUS REAL_LIT {
-  $<lit>$ = $<lit>1;
-  $<lit>$.real = -($<lit>$.real);
+  $$ = $2;
+  $$.real = -($$.real);
 }
-| TRUE { $<lit>$.type = Type_BOOLEAN; $<lit>$.boolean = 1; }
-| FALSE { $<lit>$.type = Type_BOOLEAN; $<lit>$.boolean = 0; }
+| TRUE { $$.type = Type_BOOLEAN; $$.boolean = 1; }
+| FALSE { $$.type = Type_BOOLEAN; $$.boolean = 0; }
 ;
 
 type :
   scalar_type
   {
-    $<type>$ = malloc(sizeof(struct Type));
-    $<type>$->itemType = NULL;
-    $<type>$->type = $<typeEnum>1;
+    $$ = malloc(sizeof(struct Type));
+    $$->itemType = NULL;
+    $$->type = $1;
   }
 | ARRAY positive_integer_constant TO positive_integer_constant OF type
   {
-    $<type>$ = malloc(sizeof(struct Type));
-    $<type>$->itemType = $<type>6;
-    $<type>$->upperBound = $<lit>4.integer;
-    $<type>$->lowerBound = $<lit>2.integer;
-    $<type>$->type = Type_ARRAY;
+    $$ = malloc(sizeof(struct Type));
+    $$->itemType = $6;
+    $$->upperBound = $4.integer;
+    $$->lowerBound = $2.integer;
+    $$->type = Type_ARRAY;
   }
 ;
 
 scalar_type :
-  BOOLEAN  { $<typeEnum>$ = Type_BOOLEAN; }
-| INTEGER  { $<typeEnum>$ = Type_INTEGER; }
-| REAL  { $<typeEnum>$ = Type_REAL; }
-| STRING  { $<typeEnum>$ = Type_STRING; }
+  BOOLEAN  { $$ = Type_BOOLEAN; }
+| INTEGER  { $$ = Type_INTEGER; }
+| REAL  { $$ = Type_REAL; }
+| STRING  { $$ = Type_STRING; }
 ;
 
 // must be positive
@@ -271,9 +277,9 @@ positive_integer_constant :
 
 integer_constant :
   INT_LIT
-| MINUS INT_LIT { 
-  $<lit>$ = $<lit>1;
-  $<lit>$.integer = -($<lit>$.integer);
+| MINUS INT_LIT {
+  $$ = $2;
+  $$.integer = -($$.integer);
 }
 ;
 
