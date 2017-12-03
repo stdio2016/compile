@@ -21,8 +21,6 @@ struct Constant {
   };
 };
 
-struct Constant *createConst(enum TypeEnum type);
-
 char *dupstr(char *str);
 
 #endif
