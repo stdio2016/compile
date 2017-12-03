@@ -1,5 +1,5 @@
 ALL = parser
-OBJS = y.tab.o lex.yy.o MyHash.o symtable.o
+OBJS = y.tab.o lex.yy.o MyHash.o symtable.o ast.o
 LIBS = -lfl
 CC = gcc
 YACC = yacc
@@ -14,11 +14,12 @@ y.tab.c y.tab.h: parser.y
 	$(YACC) -d $<
 lex.yy.c: tokens.l
 	$(LEX) $<
-y.tab.o: y.tab.c symtable.h
-lex.yy.o: lex.yy.c y.tab.h
+y.tab.o: y.tab.c symtable.h ast.h
+lex.yy.o: lex.yy.c y.tab.h ast.h
 
 MyHash.o: MyHash.c MyHash.h
-symtable.o: symtable.c symtable.h  MyHash.h
+symtable.o: symtable.c symtable.h MyHash.h ast.h
+ast.o: ast.c ast.h
 
 .PHONY: clean
 clean:

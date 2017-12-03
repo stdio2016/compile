@@ -1,4 +1,6 @@
 %{
+#include <stdio.h>
+#include "ast.h"
 #include "y.tab.h"
 #define LIST  mystrcat(yytext)
 #define token(t)            {LIST; if (Opt_T) printf("<%s>\n", #t);}
@@ -77,18 +79,40 @@ while   { token(KWwhile); return WHILE; }
 
 [1-9][0-9]*|0 {
   tokenString(integer, yytext);
+  int i;
+  int n = 0;
+  for (i = 0; i < yyleng; i++) {
+    n = n * 10 + (yytext[i] - '0');
+  }
+  yylval.lit.type = Type_INTEGER;
+  yylval.lit.integer = n;
   return INT_LIT;
 }
 0[0-7]+ {
   tokenString(oct_integer, yytext);
+  int i;
+  int n = 0;
+  for (i = 0; i < yyleng; i++) {
+    n = n * 8 + (yytext[i] - '0');
+  }
+  yylval.lit.type = Type_INTEGER;
+  yylval.lit.integer = n;
   return INT_LIT;
 }
 {float} {
+  float num = 0.0;
   tokenString(float, yytext);
+  sscanf(yytext, "%f", &num); // use standard C library to read float
+  yylval.lit.type = Type_REAL;
+  yylval.lit.real = num;
   return REAL_LIT;
 }
 ({float}|[0-9]+)[eE][-+]?[0-9]+ {
+  float num = 0.0;
   tokenString(scientific, yytext);
+  sscanf(yytext, "%f", &num); // use standard C library to read float
+  yylval.lit.type = Type_REAL;
+  yylval.lit.real = num;
   return REAL_LIT;
 }
 \"([^"\n]|\"\")*\" {
@@ -101,6 +125,8 @@ while   { token(KWwhile); return WHILE; }
   }
   strlit_buf[j] = '\0';
   tokenString(string, strlit_buf);
+  yylval.lit.type = Type_STRING;
+  yylval.lit.str = dupstr(strlit_buf);
   return STR_LIT;
 }
 \"([^"\n]|\"\")* {

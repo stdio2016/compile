@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "symtable.h"
+#include <string.h>
 
 extern int linenum;             /* declared in tokens.l */
 extern FILE *yyin;              /* declared by lex */
@@ -16,6 +17,8 @@ extern int yylex(void);
 %union {
   char *name;
   struct Type *type;
+  enum TypeEnum typeEnum;
+  struct Constant lit;
 }
 
 // delimiters
@@ -39,10 +42,9 @@ extern int yylex(void);
 %left LESS LEQUAL NOTEQUAL GEQUAL GREATER EQUAL
 %left PLUS MINUS
 %left MULTIPLY DIVIDE MOD
-%right UMINUS // unary minus '-'
 
 // literals
-%token INT_LIT STR_LIT REAL_LIT
+%token<literal> INT_LIT STR_LIT REAL_LIT
 %token<name> IDENT
 // token error
 %token ERROR
@@ -151,13 +153,17 @@ array_reference :
 integer_expression : expression
 ;
 
-expression :
+minus_expr :
   LPAREN expression RPAREN
-| literal_constant_no_minus
 | variable_reference
 | function_invoc
+;
 
-| MINUS expression %prec UMINUS
+expression :
+  minus_expr
+| literal_constant
+| MINUS minus_expr
+
 | expression MULTIPLY expression
 | expression DIVIDE   expression
 | expression MOD      expression
@@ -223,29 +229,39 @@ procedure_call : function_invoc SEMICOLON
 ;
 
 literal_constant :
-  literal_constant_no_minus
-| MINUS INT_LIT
-| MINUS REAL_LIT
-;
-
-literal_constant_no_minus :
-  STR_LIT
-| INT_LIT
+  integer_constant
+| STR_LIT
 | REAL_LIT
-| TRUE
-| FALSE
+| MINUS REAL_LIT {
+  $<lit>$ = $<lit>1;
+  $<lit>$.real = -($<lit>$.real);
+}
+| TRUE { $<lit>$.type = Type_BOOLEAN; $<lit>$.boolean = 1; }
+| FALSE { $<lit>$.type = Type_BOOLEAN; $<lit>$.boolean = 0; }
 ;
 
 type :
   scalar_type
+  {
+    $<type>$ = malloc(sizeof(struct Type));
+    $<type>$->itemType = NULL;
+    $<type>$->type = $<typeEnum>1;
+  }
 | ARRAY positive_integer_constant TO positive_integer_constant OF type
+  {
+    $<type>$ = malloc(sizeof(struct Type));
+    $<type>$->itemType = $<type>6;
+    $<type>$->upperBound = $<lit>4.integer;
+    $<type>$->lowerBound = $<lit>2.integer;
+    $<type>$->type = Type_ARRAY;
+  }
 ;
 
 scalar_type :
-  BOOLEAN
-| INTEGER
-| REAL
-| STRING
+  BOOLEAN  { $<typeEnum>$ = Type_BOOLEAN; }
+| INTEGER  { $<typeEnum>$ = Type_INTEGER; }
+| REAL  { $<typeEnum>$ = Type_REAL; }
+| STRING  { $<typeEnum>$ = Type_STRING; }
 ;
 
 // must be positive
@@ -255,7 +271,10 @@ positive_integer_constant :
 
 integer_constant :
   INT_LIT
-| MINUS INT_LIT
+| MINUS INT_LIT { 
+  $<lit>$ = $<lit>1;
+  $<lit>$.integer = -($<lit>$.integer);
+}
 ;
 
 identifier	: IDENT { $<name>$ = $1; }
@@ -291,9 +310,5 @@ int  main( int argc, char **argv )
 	initSymTable();
 	yyparse();
 
-	fprintf( stdout, "\n" );
-	fprintf( stdout, "|--------------------------------|\n" );
-	fprintf( stdout, "|  There is no syntactic error!  |\n" );
-	fprintf( stdout, "|--------------------------------|\n" );
 	exit(0);
 }

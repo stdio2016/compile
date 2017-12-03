@@ -1,18 +1,11 @@
 #pragma once
 #ifndef SYMTABLE_INCLUDED
 #define SYMTABLE_INCLUDED
+#include "ast.h"
 
 enum SymbolKind {
   SymbolKind_program, SymbolKind_function, SymbolKind_parameter,
   SymbolKind_variable, SymbolKind_constant
-};
-
-struct Type {
-  enum {
-    Type_INTEGER, Type_REAL, Type_BOOLEAN, Type_STRING, Type_ARRAY, Type_VOID
-  } type;
-  int dimension;
-  int *sizes;
 };
 
 struct Attribute {
@@ -24,7 +17,7 @@ struct Attribute {
       int arity;
       struct Type *types;
     } argType;
-    char *constant;
+    struct Constant constant;
   };
 };
 
