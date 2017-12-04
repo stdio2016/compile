@@ -102,7 +102,7 @@ function_decl :
   formal_args RPAREN function_type SEMICOLON { endFuncDecl($6); }
   function_body END IDENT
   {
-    popScope(Opt_D);
+    // popScope is done by function_body
     free($11);
   }
 ;
@@ -132,7 +132,8 @@ formal_arg : { startParamDecl(); }
   identifier_list COLON type { endParamDecl($4); }
 ;
 
-function_body : compound_stmt
+function_body :
+  BEGIN_  var_or_const_decls  statements END { popScope(Opt_D); }
 ;
 
 compound_stmt :

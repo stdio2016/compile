@@ -8,6 +8,8 @@ enum SymbolKind {
   SymbolKind_variable, SymbolKind_constant
 };
 
+extern const char *SymbolKindName[];
+
 struct Attribute {
   enum {
     Attribute_ARGTYPE, Attribute_CONST, Attribute_NONE
@@ -47,4 +49,5 @@ void pushScope(void);
 void popScope(int toShowScope);
 
 void destroyAttribute(struct Attribute *attr);
+void showAttribute(struct Attribute attr);
 #endif

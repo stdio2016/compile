@@ -4,6 +4,11 @@
 #include "symtable.h"
 extern int linenum; // from tokens.l
 
+const char *SymbolKindName[] = {
+  "program", "function", "parameter",
+  "variable", "constant"
+};
+
 struct MyHash table;
 
 struct SymTableEntry **stack;
@@ -106,10 +111,27 @@ void pushScope(void) {
 }
 
 void showScope(size_t stackstart) {
+  int i;
+  for (i = 0; i < 110; i++)
+    printf("=");
+  printf("\n");
+  printf("%-33s%-11s%-11s%-17s%-11s\n","Name","Kind","Level","Type","Attribute");
+  for (i = 0; i < 110; i++)
+    printf("-");
+  printf("\n");
   size_t j;
   for (j = stackstart; j < stackTop; j++) {
-    printf("%s\n", stack[j]->name);
+    printf("%-33s", stack[j]->name);
+    printf("%-11s", SymbolKindName[stack[j]->kind]);
+    printf("%d%-10s", stack[j]->level, stack[j]->level == 0 ? "(global)" : "(local)");
+    int n = showType(stack[j]->type), k;
+    for (k = n; k < 17; k++) putchar(' '); // align
+    showAttribute(stack[j]->attr);
+    printf("\n");
   }
+  for (i = 0; i < 110; i++)
+    printf("-");
+  printf("\n");
 }
 
 void popScope(int toShowScope) {
@@ -177,7 +199,7 @@ void endFuncDecl(struct Type *retType) {
   stack[i-1]->attr.tag = Attribute_ARGTYPE;
   stack[i-1]->attr.argType.arity = nargs;
   stack[i-1]->attr.argType.types = argtype;
-  destroyType(retType, 1);
+  stack[i-1]->type = retType;
 }
 
 void destroyAttribute(struct Attribute *attr) {
@@ -192,4 +214,17 @@ void destroyAttribute(struct Attribute *attr) {
     destroyConst(attr->constant);
   }
   attr->tag = Attribute_NONE;
+}
+
+void showAttribute(struct Attribute attr) {
+  if (attr.tag == Attribute_ARGTYPE) {
+    int i;
+    for (i = 0; i < attr.argType.arity; i++) {
+      if (i > 0) printf(", ");
+      showType(&attr.argType.types[i]);
+    }
+  }
+  else if (attr.tag == Attribute_CONST) {
+    showConst(attr.constant);
+  }
 }

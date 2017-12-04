@@ -25,8 +25,9 @@ char *dupstr(char *str);
 
 struct Type *copyType(struct Type *ptr);
 void destroyType(struct Type *ptr, int includeSelf);
+int showType(struct Type *type); // returns chars printed
 
 struct Constant copyConst(struct Constant c);
 void destroyConst(struct Constant c);
-
+void showConst(struct Constant c);
 #endif
