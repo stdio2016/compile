@@ -127,12 +127,57 @@ void popScope(int toShowScope) {
   }
 }
 
-void endParamDecl(struct Type *type) {
+void endVarDecl(struct Type *type) {
+  size_t i;
+  for (i = varDeclStart; i < stackTop; i++) {
+    stack[i]->kind = SymbolKind_variable;
+    stack[i]->type = copyType(type);
+  }
+  destroyType(type, 1);
+}
 
+void endConstDecl(struct Constant constant) {
+  size_t i;
+  struct Type constType;
+  constType.type = constant.type;
+  constType.upperBound = 0;
+  constType.lowerBound = 0;
+  constType.itemType = NULL;
+  for (i = varDeclStart; i < stackTop; i++) {
+    stack[i]->kind = SymbolKind_constant;
+    stack[i]->type = copyType(&constType);
+    stack[i]->attr.tag = Attribute_CONST;
+    stack[i]->attr.constant = copyConst(constant);
+  }
+  destroyConst(constant);
+}
+
+void endParamDecl(struct Type *type) {
+  size_t i;
+  for (i = varDeclStart; i < stackTop; i++) {
+    stack[i]->kind = SymbolKind_parameter;
+    stack[i]->type = copyType(type);
+  }
+  destroyType(type, 1);
 }
 
 void endFuncDecl(struct Type *retType) {
-
+  size_t i = stackTop;
+  while (i > 0 && stack[i-1]->kind == SymbolKind_parameter) {
+    i--;
+  }
+  size_t nargs = stackTop - i;
+  struct Type *argtype = malloc(sizeof(struct Type) * nargs);
+  size_t j;
+  for (j = i; j < stackTop; j++) {
+    struct Type *c = copyType(stack[j]->type);
+    argtype[j-i] = *c;
+    free(c);
+  }
+  stack[i-1]->attr.tag = Attribute_ARGTYPE;
+  stack[i-1]->attr.argType.arity = nargs;
+  stack[i-1]->attr.argType.types = argtype;
+  destroyType(retType, 1);
 }
 
 void destroyAttribute(struct Attribute *attr) {

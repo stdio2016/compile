@@ -38,7 +38,8 @@ void startParamDecl(void);
 // name is not copied
 void addSymbol(char *name, enum SymbolKind kind);
 
-void endVarDecl(enum SymbolKind kind, struct Type *type, char *constant);
+void endVarDecl(struct Type *type);
+void endConstDecl(struct Constant constant);
 void endParamDecl(struct Type *type);
 void endFuncDecl(struct Type *returnType);
 

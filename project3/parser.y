@@ -56,7 +56,11 @@ extern int yylex(void);
 %type<type> type function_type
 %%
 
-program		: programname SEMICOLON programbody END IDENT { popScope(Opt_D); }
+program		: programname SEMICOLON programbody END IDENT
+		{
+		  popScope(Opt_D);
+		  free($5);
+		}
 		;
 
 programname	: identifier { addSymbol($1, SymbolKind_program); }
@@ -72,11 +76,11 @@ var_or_const_decls :
 ;
 
 var_decl :
-  VAR startVarDecl identifier_list COLON type SEMICOLON
+  VAR startVarDecl identifier_list COLON type SEMICOLON { endVarDecl($5); }
 ;
 
 const_decl :
-  VAR startVarDecl identifier_list COLON literal_constant SEMICOLON
+  VAR startVarDecl identifier_list COLON literal_constant SEMICOLON { endConstDecl($5); }
 ;
 
 startVarDecl: {
@@ -96,7 +100,11 @@ function_decls :
 function_decl :
   function_name LPAREN { pushScope(); }
   formal_args RPAREN function_type SEMICOLON { endFuncDecl($6); }
-  function_body END IDENT { popScope(Opt_D); }
+  function_body END IDENT
+  {
+    popScope(Opt_D);
+    free($11);
+  }
 ;
 
 function_type :
