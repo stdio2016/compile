@@ -6,7 +6,7 @@ extern int linenum; // from tokens.l
 
 const char *SymbolKindName[] = {
   "program", "function", "parameter",
-  "variable", "constant"
+  "variable", "constant", "loop var"
 };
 
 struct MyHash table;
@@ -63,7 +63,7 @@ void addSymbol(char *name, enum SymbolKind kind) {
   struct SymTableEntry *en = createSymEntry(name, kind);
   struct SymTableEntry *old = MyHash_set(&table, name, en);
   if (old != NULL) {
-    if (old->level == curScopeLevel) {
+    if (old->level == curScopeLevel || old->kind == SymbolKind_loopVar) {
       printf("<Error> found in Line %d: symbol %s is redeclared\n", linenum, name);
       MyHash_set(&table, name, old);
       free(name);
@@ -79,6 +79,13 @@ void addSymbol(char *name, enum SymbolKind kind) {
     stack[stackTop] = en;
     stackTop++;
   }
+}
+
+void addLoopVar(char *name) {
+  // add a loop var symbol in higher level scope
+  curScopeLevel++;
+  addSymbol(name, SymbolKind_loopVar);
+  curScopeLevel--;
 }
 
 void popSymbol(void) {
@@ -121,6 +128,7 @@ void showScope(size_t stackstart) {
   printf("\n");
   size_t j;
   for (j = stackstart; j < stackTop; j++) {
+    if (stack[j]->kind == SymbolKind_loopVar) continue ;
     printf("%-33s", stack[j]->name);
     printf("%-11s", SymbolKindName[stack[j]->kind]);
     printf("%d%-10s", stack[j]->level, stack[j]->level == 0 ? "(global)" : "(local)");

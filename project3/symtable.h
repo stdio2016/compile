@@ -5,7 +5,7 @@
 
 enum SymbolKind {
   SymbolKind_program, SymbolKind_function, SymbolKind_parameter,
-  SymbolKind_variable, SymbolKind_constant
+  SymbolKind_variable, SymbolKind_constant, SymbolKind_loopVar
 };
 
 extern const char *SymbolKindName[];
@@ -39,6 +39,7 @@ void startParamDecl(void);
 
 // name is not copied
 void addSymbol(char *name, enum SymbolKind kind);
+void addLoopVar(char *name);
 
 void endVarDecl(struct Type *type);
 void endConstDecl(struct Constant constant);

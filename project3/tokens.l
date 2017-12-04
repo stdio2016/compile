@@ -9,6 +9,7 @@
 #define tokenString(t, s)   {LIST; if (Opt_T) printf("<%s: %s>\n", #t, (s));}
 #define tokenError()   {LIST; return ERROR;}
 #define MAX_LINE_LENG  256
+#define MAX_IDENT_LENG  32
 
 int Opt_S = 1;
 int Opt_T = 1;
@@ -71,8 +72,11 @@ while   { token(KWwhile); return WHILE; }
 [A-Za-z][A-Za-z0-9]* {
   tokenString(id, yytext);
   size_t n = yyleng;
+  if (n > MAX_IDENT_LENG)
+    n = MAX_IDENT_LENG;
   char *nstr = malloc(n + 1);
-  strcpy(nstr, yytext);
+  strncpy(nstr, yytext, n);
+  nstr[n] = '\0';
   yylval.name = nstr;
   return IDENT;
 }

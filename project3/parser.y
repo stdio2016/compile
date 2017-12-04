@@ -66,7 +66,7 @@ program		: programname SEMICOLON programbody END IDENT
 programname	: identifier { addSymbol($1, SymbolKind_program); }
 		;
 
-programbody	: var_or_const_decls  function_decls  compound_stmt
+programbody	: var_or_const_decls  function_decls  { pushScope(); } compound_stmt
 		;
 
 var_or_const_decls :
@@ -100,9 +100,9 @@ function_decls :
 function_decl :
   function_name LPAREN { pushScope(); }
   formal_args RPAREN function_type SEMICOLON { endFuncDecl($6); }
-  function_body END IDENT
+  compound_stmt END IDENT
   {
-    // popScope is done by function_body
+    // popScope is done by compound_stmt
     free($11);
   }
 ;
@@ -132,12 +132,8 @@ formal_arg : { startParamDecl(); }
   identifier_list COLON type { endParamDecl($4); }
 ;
 
-function_body :
-  BEGIN_  var_or_const_decls  statements END { popScope(Opt_D); }
-;
-
 compound_stmt :
-  BEGIN_  { pushScope(); } var_or_const_decls  statements END { popScope(Opt_D); }
+  BEGIN_  var_or_const_decls  statements END { popScope(Opt_D); }
 ;
 
 statements :
@@ -146,7 +142,7 @@ statements :
 ;
 
 statement :
-  compound_stmt
+  { pushScope(); } compound_stmt
 | simple_stmt
 | conditional_stmt
 | while_stmt
@@ -162,12 +158,12 @@ simple_stmt :
 ;
 
 variable_reference :
-  identifier
+  identifier { free($1); }
 | array_reference
 ;
 
 array_reference :
-  identifier LBRACKET integer_expression RBRACKET
+  identifier { free($1); } LBRACKET integer_expression RBRACKET
 | array_reference LBRACKET integer_expression RBRACKET
 ;
 
@@ -238,7 +234,7 @@ while_stmt :
 ;
 
 for_stmt :
-  FOR identifier ASSIGN integer_constant TO integer_constant DO
+  FOR identifier { addLoopVar($2); } ASSIGN integer_constant TO integer_constant DO
   statements
   END DO
 ;
