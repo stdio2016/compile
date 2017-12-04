@@ -41,4 +41,7 @@ void addSymbol(char *name, enum SymbolKind kind);
 void endVarDecl(enum SymbolKind kind, struct Type *type, char *constant);
 void endParamDecl(struct Type *type);
 void endFuncDecl(struct Type *returnType);
+
+void pushScope(void);
+void popScope(int toShowScope);
 #endif

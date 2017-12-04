@@ -53,10 +53,10 @@ extern int yylex(void);
 %type<lit> literal_constant integer_constant positive_integer_constant
 %type<name> identifier
 %type<typeEnum> scalar_type
-%type<type> type
+%type<type> type function_type
 %%
 
-program		: programname SEMICOLON programbody END IDENT
+program		: programname SEMICOLON programbody END IDENT { popScope(Opt_D); }
 		;
 
 programname	: identifier { addSymbol($1, SymbolKind_program); }
@@ -94,13 +94,18 @@ function_decls :
 ;
 
 function_decl :
-  function_name LPAREN formal_args RPAREN function_type SEMICOLON
-  function_body END IDENT
+  function_name LPAREN { pushScope(); }
+  formal_args RPAREN function_type SEMICOLON { endFuncDecl($6); }
+  function_body END IDENT { popScope(Opt_D); }
 ;
 
 function_type :
-  COLON type
-| /* procedure has no type */
+  COLON type { $$ = $2; }
+| /* procedure has no type */ {
+    $$ = malloc(sizeof(struct Type));
+    $$->itemType = NULL;
+    $$->type = Type_VOID;
+  }
 ;
 
 function_name : identifier { addSymbol($1, SymbolKind_function); };
@@ -115,14 +120,15 @@ formal_args_list :
 | formal_args_list SEMICOLON formal_arg
 ;
 
-formal_arg : identifier_list COLON type
+formal_arg : { startParamDecl(); }
+  identifier_list COLON type { endParamDecl($4); }
 ;
 
 function_body : compound_stmt
 ;
 
 compound_stmt :
-  BEGIN_  var_or_const_decls  statements END
+  BEGIN_  { pushScope(); } var_or_const_decls  statements END { popScope(Opt_D); }
 ;
 
 statements :
@@ -167,7 +173,7 @@ minus_expr :
 
 expression :
   minus_expr
-| literal_constant
+| literal_constant { if ($1.type == Type_STRING) free($1.str); }
 | MINUS minus_expr
 
 | expression MULTIPLY expression
