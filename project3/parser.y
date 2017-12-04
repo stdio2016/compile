@@ -236,7 +236,7 @@ while_stmt :
 for_stmt :
   FOR identifier { addLoopVar($2); } ASSIGN integer_constant TO integer_constant DO
   statements
-  END DO
+  END DO { removeLoopVar(); }
 ;
 
 return_stmt : RETURN expression SEMICOLON

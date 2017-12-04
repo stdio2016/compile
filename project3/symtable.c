@@ -88,6 +88,10 @@ void addLoopVar(char *name) {
   curScopeLevel--;
 }
 
+void removeLoopVar(void) {
+  popSymbol();
+}
+
 void popSymbol(void) {
   stackTop--;
   struct SymTableEntry *top = stack[stackTop];

@@ -40,6 +40,7 @@ void startParamDecl(void);
 // name is not copied
 void addSymbol(char *name, enum SymbolKind kind);
 void addLoopVar(char *name);
+void removeLoopVar(void);
 
 void endVarDecl(struct Type *type);
 void endConstDecl(struct Constant constant);
