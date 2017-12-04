@@ -23,4 +23,10 @@ struct Constant {
 
 char *dupstr(char *str);
 
+struct Type *copyType(struct Type *ptr);
+void destroyType(struct Type *ptr, int includeSelf);
+
+struct Constant copyConst(struct Constant c);
+void destroyConst(struct Constant c);
+
 #endif

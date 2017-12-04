@@ -25,7 +25,7 @@ struct SymTableEntry {
   char *name;
   enum SymbolKind kind;
   int level;
-  struct Type type;
+  struct Type *type;
   struct Attribute attr;
   struct SymTableEntry *prev;
 };
@@ -44,4 +44,6 @@ void endFuncDecl(struct Type *returnType);
 
 void pushScope(void);
 void popScope(int toShowScope);
+
+void destroyAttribute(struct Attribute *attr);
 #endif
