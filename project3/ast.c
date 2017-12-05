@@ -51,7 +51,7 @@ int showType(struct Type *type) {
       inner = type;
       while (inner->type == Type_ARRAY) {
         int dim;
-        if (inner->upperBound >= inner->lowerBound) 
+        if (inner->upperBound >= inner->lowerBound)
           dim = inner->upperBound - inner->lowerBound + 1;
         else
           dim = inner->lowerBound - inner->upperBound + 1;

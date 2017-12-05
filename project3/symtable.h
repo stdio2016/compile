@@ -38,14 +38,14 @@ void startVarDecl(void);
 void startParamDecl(void);
 
 // name is not copied
-void addSymbol(char *name, enum SymbolKind kind);
-void addLoopVar(char *name);
+int addSymbol(char *name, enum SymbolKind kind);
+int addLoopVar(char *name);
 void removeLoopVar(void);
 
 void endVarDecl(struct Type *type);
 void endConstDecl(struct Constant constant);
 void endParamDecl(struct Type *type);
-void endFuncDecl(struct Type *returnType);
+void endFuncDecl(struct Type *returnType, int funcExists);
 
 void pushScope(void);
 void popScope(int toShowScope);

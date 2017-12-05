@@ -19,6 +19,7 @@ extern int yylex(void);
   struct Type *type;
   enum TypeEnum typeEnum;
   struct Constant lit;
+  int success;
 }
 
 // delimiters
@@ -99,7 +100,7 @@ function_decls :
 
 function_decl :
   function_name LPAREN { pushScope(); }
-  formal_args RPAREN function_type SEMICOLON { endFuncDecl($6); }
+  formal_args RPAREN function_type SEMICOLON { endFuncDecl($6, $<success>1); }
   compound_stmt END IDENT
   {
     // popScope is done by compound_stmt
@@ -116,7 +117,7 @@ function_type :
   }
 ;
 
-function_name : identifier { addSymbol($1, SymbolKind_function); };
+function_name : identifier { $<success>$ = addSymbol($1, SymbolKind_function); };
 
 formal_args :
   /* no args */
@@ -234,9 +235,9 @@ while_stmt :
 ;
 
 for_stmt :
-  FOR identifier { addLoopVar($2); } ASSIGN integer_constant TO integer_constant DO
+  FOR identifier { $<success>$ = addLoopVar($2); } ASSIGN integer_constant TO integer_constant DO
   statements
-  END DO { removeLoopVar(); }
+  END DO { if ($<success>3) removeLoopVar(); }
 ;
 
 return_stmt : RETURN expression SEMICOLON

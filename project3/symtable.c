@@ -58,7 +58,7 @@ struct SymTableEntry *createSymEntry(char *name, enum SymbolKind kind) {
   return en;
 }
 
-void addSymbol(char *name, enum SymbolKind kind) {
+int addSymbol(char *name, enum SymbolKind kind) {
   needResizeStack();
   struct SymTableEntry *en = createSymEntry(name, kind);
   struct SymTableEntry *old = MyHash_set(&table, name, en);
@@ -68,6 +68,7 @@ void addSymbol(char *name, enum SymbolKind kind) {
       MyHash_set(&table, name, old);
       free(name);
       free(en);
+      return 0;
     }
     else { // symbol in lower level scope
       stack[stackTop] = en;
@@ -79,17 +80,21 @@ void addSymbol(char *name, enum SymbolKind kind) {
     stack[stackTop] = en;
     stackTop++;
   }
+  return 1;
 }
 
-void addLoopVar(char *name) {
+int addLoopVar(char *name) {
   // add a loop var symbol in higher level scope
   curScopeLevel++;
-  addSymbol(name, SymbolKind_loopVar);
+  int y = addSymbol(name, SymbolKind_loopVar);
   curScopeLevel--;
+  return y;
 }
 
 void removeLoopVar(void) {
-  popSymbol();
+  if (stack[stackTop-1]->kind == SymbolKind_loopVar) {
+    popSymbol();
+  }
 }
 
 void popSymbol(void) {
@@ -149,7 +154,8 @@ void showScope(size_t stackstart) {
 void popScope(int toShowScope) {
   curScopeLevel--;
   size_t i = stackTop;
-  while (i > 0 && stack[i-1]->level > curScopeLevel) {
+  while (i > 0 && stack[i-1]->level > curScopeLevel
+    && stack[i-1]->level != SymbolKind_loopVar) {
     i--;
   }
   size_t j;
@@ -195,7 +201,11 @@ void endParamDecl(struct Type *type) {
   destroyType(type, 1);
 }
 
-void endFuncDecl(struct Type *retType) {
+void endFuncDecl(struct Type *retType, int funcExists) {
+  if (!funcExists) {
+    free(retType);
+    return ;
+  }
   size_t i = stackTop;
   while (i > 0 && stack[i-1]->kind == SymbolKind_parameter) {
     i--;
