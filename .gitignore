@@ -1,0 +1,16 @@
+# archive - upload to e3
+0*.zip
+
+# lex generated
+lex.yy.c
+
+# yacc generated
+y.tab.c
+y.tab.h
+
+# build object file
+*.o
+
+# executable
+parser
+pscanner
