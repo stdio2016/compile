@@ -218,7 +218,7 @@ void endParamDecl(struct Type *type) {
   destroyType(type);
 }
 
-void endFuncDecl(struct Type *retType, int funcExists) {
+void endFuncDecl(struct Type *retType, Bool funcExists) {
   if (!funcExists) {
     free(retType);
     return ;

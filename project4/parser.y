@@ -171,8 +171,8 @@ statement :
 ;
 
 simple_stmt :
-  variable_reference ASSIGN expression SEMICOLON
-| PRINT expression SEMICOLON
+  variable_reference ASSIGN boolean_expr SEMICOLON
+| PRINT boolean_expr SEMICOLON
 | READ variable_reference SEMICOLON
 ;
 
@@ -182,40 +182,70 @@ variable_reference :
 ;
 
 array_reference :
-  identifier { free($1); } LBRACKET integer_expression RBRACKET
-| array_reference LBRACKET integer_expression RBRACKET
-;
-
-integer_expression : expression
+  identifier { free($1); } LBRACKET boolean_expr RBRACKET
+| array_reference LBRACKET boolean_expr RBRACKET
 ;
 
 minus_expr :
-  LPAREN expression RPAREN
+  LPAREN boolean_expr RPAREN
 | variable_reference
 | function_invoc
 ;
 
-expression :
+factor :
   minus_expr
 | literal_constant { if ($1.type == Type_STRING) free($1.str); }
 | MINUS minus_expr
+;
 
-| expression MULTIPLY expression
-| expression DIVIDE   expression
-| expression MOD      expression
-| expression PLUS  expression
-| expression MINUS expression
+term :
+  factor
+| term mul_op factor
+;
 
-| expression LESS     expression
-| expression LEQUAL   expression
-| expression EQUAL    expression
-| expression GEQUAL   expression
-| expression GREATER  expression
-| expression NOTEQUAL expression
+mul_op :
+  MULTIPLY
+| DIVIDE
+| MOD
+;
 
-| NOT expression
-| expression AND expression
-| expression OR expression
+expression :
+  term
+| expression plus_op term
+;
+
+plus_op :
+  PLUS
+| MINUS
+;
+
+relation_expr :
+  expression
+| relation_expr relop expression
+;
+
+relop :
+  LESS
+| LEQUAL
+| EQUAL
+| GEQUAL
+| GREATER
+| NOTEQUAL
+;
+
+boolean_factor :
+  relation_expr
+| NOT boolean_factor
+;
+
+boolean_term :
+  boolean_factor
+| boolean_term AND boolean_factor
+;
+
+boolean_expr :
+  boolean_term
+| boolean_expr OR boolean_term
 ;
 
 function_invoc : identifier LPAREN arg_list RPAREN
@@ -227,8 +257,8 @@ arg_list :
 ;
 
 arguments :
-  expression
-| arguments COMMA expression
+  boolean_expr
+| arguments COMMA boolean_expr
 ;
 
 conditional_stmt :
@@ -243,9 +273,6 @@ conditional_stmt :
   END IF
 ;
 
-boolean_expr : expression
-;
-
 while_stmt :
   WHILE boolean_expr DO
   statements
@@ -258,7 +285,7 @@ for_stmt :
   END DO { if ($<boolVal>3) removeLoopVar(); }
 ;
 
-return_stmt : RETURN expression SEMICOLON
+return_stmt : RETURN boolean_expr SEMICOLON
 ;
 
 procedure_call : function_invoc SEMICOLON

@@ -46,7 +46,7 @@ void removeLoopVar(void);
 void endVarDecl(struct Type *type);
 void endConstDecl(struct Constant constant);
 void endParamDecl(struct Type *type);
-void endFuncDecl(struct Type *returnType, int funcExists);
+void endFuncDecl(struct Type *returnType, Bool funcExists);
 
 void pushScope(void);
 void popScope(int toShowScope);
