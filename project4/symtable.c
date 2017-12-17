@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "MyHash.h"
 #include "symtable.h"
+#include "errReport.h"
 extern int linenum; // from tokens.l
 
 const char *SymbolKindName[] = {
@@ -64,7 +65,7 @@ int addSymbol(char *name, enum SymbolKind kind) {
   struct SymTableEntry *old = MyHash_set(&table, name, en);
   if (old != NULL) {
     if (old->level == curScopeLevel || old->kind == SymbolKind_loopVar) {
-      printf("<Error> found in Line %d: symbol %s is redeclared\n", linenum, name);
+      sementicError("symbol " BOLD_TEXT"%s" NORMAL_TEXT" is redeclared", name);
       MyHash_set(&table, name, old);
       free(name);
       free(en);
