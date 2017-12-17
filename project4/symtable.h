@@ -17,7 +17,7 @@ struct Attribute {
   union {
     struct Attribute_ArgType {
       int arity;
-      struct Type *types;
+      struct Type **types;
     } argType;
     struct Constant constant;
   };

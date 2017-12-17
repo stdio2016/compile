@@ -228,12 +228,11 @@ void endFuncDecl(struct Type *retType, int funcExists) {
     i--;
   }
   size_t nargs = stackTop - i;
-  struct Type *argtype = malloc(sizeof(struct Type) * nargs);
+  struct Type **argtype = malloc(sizeof(struct Type *) * nargs);
   size_t j;
   for (j = i; j < stackTop; j++) {
     struct Type *c = copyType(stack[j]->type);
-    argtype[j-i] = *c;
-    free(c);
+    argtype[j-i] = c;
   }
   stack[i-1]->attr.tag = Attribute_ARGTYPE;
   stack[i-1]->attr.argType.arity = nargs;
@@ -245,7 +244,7 @@ void destroyAttribute(struct Attribute *attr) {
   if (attr->tag == Attribute_ARGTYPE) {
     int i;
     for (i = 0; i < attr->argType.arity; i++) {
-      destroyType(&attr->argType.types[i], 0);
+      destroyType(attr->argType.types[i], 0);
     }
     free(attr->argType.types);
   }
@@ -260,7 +259,7 @@ void showAttribute(struct Attribute attr) {
     int i;
     for (i = 0; i < attr.argType.arity; i++) {
       if (i > 0) printf(", ");
-      showType(&attr.argType.types[i]);
+      showType(attr.argType.types[i]);
     }
   }
   else if (attr.tag == Attribute_CONST) {
