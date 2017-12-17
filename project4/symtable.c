@@ -125,7 +125,7 @@ void popSymbol(void) {
     MyHash_set(&table, top->name, top->prev);
   }
   free(top->name);
-  destroyType(top->type, 1);
+  destroyType(top->type);
   destroyAttribute(&top->attr);
   free(top);
   stack[stackTop] = NULL;
@@ -190,7 +190,7 @@ void endVarDecl(struct Type *type) {
     stack[i]->kind = SymbolKind_variable;
     stack[i]->type = copyType(type);
   }
-  destroyType(type, 1);
+  destroyType(type);
 }
 
 void endConstDecl(struct Constant constant) {
@@ -215,7 +215,7 @@ void endParamDecl(struct Type *type) {
     stack[i]->kind = SymbolKind_parameter;
     stack[i]->type = copyType(type);
   }
-  destroyType(type, 1);
+  destroyType(type);
 }
 
 void endFuncDecl(struct Type *retType, int funcExists) {
@@ -244,7 +244,7 @@ void destroyAttribute(struct Attribute *attr) {
   if (attr->tag == Attribute_ARGTYPE) {
     int i;
     for (i = 0; i < attr->argType.arity; i++) {
-      destroyType(attr->argType.types[i], 0);
+      destroyType(attr->argType.types[i]);
     }
     free(attr->argType.types);
   }

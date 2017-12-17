@@ -23,12 +23,11 @@ struct Type *copyType(struct Type *ptr) {
   return cp;
 }
 
-void destroyType(struct Type *ptr, int includeSelf) {
+void destroyType(struct Type *ptr) {
   if (ptr != NULL && ptr->itemType != NULL) {
-    destroyType(ptr->itemType, 1);
+    destroyType(ptr->itemType);
   }
-  if (includeSelf)
-    free(ptr);
+  free(ptr);
 }
 
 int showType(struct Type *type) {

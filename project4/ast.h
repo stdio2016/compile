@@ -43,7 +43,7 @@ struct PairName {
 char *dupstr(char *str);
 
 struct Type *copyType(struct Type *ptr);
-void destroyType(struct Type *ptr, int includeSelf);
+void destroyType(struct Type *ptr);
 int showType(struct Type *type); // returns chars printed
 
 struct Constant copyConst(struct Constant c);
