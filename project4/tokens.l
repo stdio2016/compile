@@ -121,7 +121,7 @@ while   { token(KWwhile); return WHILE; }
 }
 \"([^"\n]|\"\")*\" {
   int i, j = 0;
-  for (i = 1; yytext[i+1]; i++) {
+  for (i = 1; yytext[i+1] && i < MAX_LINE_LENG; i++) {
     strlit_buf[j++] = yytext[i];
     if (yytext[i] == '"') {
       i++;
@@ -187,7 +187,7 @@ while   { token(KWwhile); return WHILE; }
 
 void mystrcat(const char *text)
 {
-  while (*text) {
+  while (*text && buf_ptr < buf + MAX_LINE_LENG - 1) {
     *buf_ptr = *text;
     buf_ptr++;
     text++;
