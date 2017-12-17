@@ -1,8 +1,9 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
-#include "symtable.h"
 #include <string.h>
+#include "symtable.h"
+#include "errReport.h"
 
 extern int linenum;             /* declared in tokens.l */
 extern FILE *yyin;              /* declared by lex */
@@ -12,6 +13,7 @@ extern int Opt_D;               /* declared in tokens.l */
 
 int yyerror( char *msg );
 extern int yylex(void);
+char *filename;
 %}
 
 %union {
@@ -19,8 +21,8 @@ extern int yylex(void);
   struct Type *type;
   enum TypeEnum typeEnum;
   struct Constant lit;
-  int intType;
-  int boolType;
+  struct PairName pairName; // for program and function name
+  Bool boolVal;
 }
 
 // delimiters
@@ -60,12 +62,24 @@ extern int yylex(void);
 
 program		: programname SEMICOLON programbody END IDENT
 		{
+		  if (strcmp($<pairName>1.name, $5) != 0) {
+		    semanticError("program end ID inconsist with the beginning ID");
+		  }
+		  if (strcmp($5, filename) != 0) {
+		    semanticError("program end ID inconsist with file name");
+		  }
 		  popScope(Opt_D);
 		  free($5);
 		}
 		;
 
-programname	: identifier { addSymbol($1, SymbolKind_program); }
+programname	: identifier
+		{
+		  if (strcmp($1, filename) != 0) {
+		    semanticError("program beginning ID inconsist with file name");
+		  }
+		  $<pairName>$ = addSymbol($1, SymbolKind_program);
+		}
 		;
 
 programbody	: var_or_const_decls  function_decls  { pushScope(); } compound_stmt
@@ -101,10 +115,13 @@ function_decls :
 
 function_decl :
   function_name LPAREN { pushScope(); }
-  formal_args RPAREN function_type SEMICOLON { endFuncDecl($6, $<boolType>1); }
+  formal_args RPAREN function_type SEMICOLON { endFuncDecl($6, $<pairName>1.success); }
   compound_stmt END IDENT
   {
     // popScope is done by compound_stmt
+    if (strcmp($<pairName>1.name, $11) != 0) {
+      semanticError("function end ID inconsist with the beginning ID");
+    }
     free($11);
   }
 ;
@@ -118,7 +135,7 @@ function_type :
   }
 ;
 
-function_name : identifier { $<boolType>$ = addSymbol($1, SymbolKind_function); };
+function_name : identifier { $<pairName>$ = addSymbol($1, SymbolKind_function); };
 
 formal_args :
   /* no args */
@@ -236,9 +253,9 @@ while_stmt :
 ;
 
 for_stmt :
-  FOR identifier { $<boolType>$ = addLoopVar($2); } ASSIGN integer_constant TO integer_constant DO
+  FOR identifier { $<boolVal>$ = addLoopVar($2); } ASSIGN integer_constant TO integer_constant DO
   statements
-  END DO { if ($<boolType>3) removeLoopVar(); }
+  END DO { if ($<boolVal>3) removeLoopVar(); }
 ;
 
 return_stmt : RETURN expression SEMICOLON
@@ -255,8 +272,8 @@ literal_constant :
   $$ = $2;
   $$.real = -($$.real);
 }
-| TRUE { $$.type = Type_BOOLEAN; $$.boolean = 1; }
-| FALSE { $$.type = Type_BOOLEAN; $$.boolean = 0; }
+| TRUE { $$.type = Type_BOOLEAN; $$.boolean = True; }
+| FALSE { $$.type = Type_BOOLEAN; $$.boolean = False; }
 ;
 
 type :
@@ -296,7 +313,7 @@ integer_constant :
 }
 ;
 
-identifier	: IDENT { $<name>$ = $1; }
+identifier	: IDENT { $$ = $1; }
 		;
 
 %%
@@ -311,6 +328,19 @@ int yyerror( char *msg )
         exit(-1);
 }
 
+char *getfilename(const char *path) {
+  const char *name = strrchr(path, '/');
+  if (name == NULL) name = path;
+  else name = name + 1;
+  const char *dot = strchr(name, '.');
+  if (dot == NULL) dot = name + strlen(name);
+  size_t len = dot - name;
+  char *newname = malloc(len+1);
+  memcpy(newname, name, len);
+  newname[len] = '\0';
+  return newname;
+}
+
 int  main( int argc, char **argv )
 {
 	if( argc != 2 ) {
@@ -319,15 +349,21 @@ int  main( int argc, char **argv )
 	}
 
 	FILE *fp = fopen( argv[1], "r" );
+	filename = getfilename(argv[1]);
 	
 	if( fp == NULL )  {
 		fprintf( stdout, "Open  file  error\n" );
+		free(filename);
 		exit(-1);
 	}
 	
 	yyin = fp;
 	initSymTable();
 	yyparse();
+	destroySymTable();
+	free(filename);
+	//yylex_destroy();
+	fclose(fp);
 
 	exit(0);
 }

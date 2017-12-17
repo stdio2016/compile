@@ -12,6 +12,6 @@
   #define BOLD_TEXT
 #endif
 
-void sementicError(const char *fmt, ...);
+void semanticError(const char *fmt, ...);
 
 #endif

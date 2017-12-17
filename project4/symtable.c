@@ -38,6 +38,17 @@ void initSymTable(void) {
   curScopeLevel = 0;
 }
 
+void destroySymTable(void) {
+  while (stackTop > 0) {
+    popSymbol();
+  }
+  stackSize = 0;
+  free(stack);
+  curScopeLevel = 0;
+  int i;
+  free(table._buckets);
+}
+
 void needResizeStack(void) {
   if (stackTop >= stackSize) {
     stackSize *= 2;
@@ -59,17 +70,20 @@ struct SymTableEntry *createSymEntry(char *name, enum SymbolKind kind) {
   return en;
 }
 
-int addSymbol(char *name, enum SymbolKind kind) {
+struct PairName addSymbol(char *name, enum SymbolKind kind) {
   needResizeStack();
   struct SymTableEntry *en = createSymEntry(name, kind);
   struct SymTableEntry *old = MyHash_set(&table, name, en);
+  struct PairName out;
   if (old != NULL) {
     if (old->level == curScopeLevel || old->kind == SymbolKind_loopVar) {
-      sementicError("symbol " BOLD_TEXT"%s" NORMAL_TEXT" is redeclared", name);
+      semanticError("symbol " BOLD_TEXT "%s" NORMAL_TEXT " is redeclared", name);
       MyHash_set(&table, name, old);
       free(name);
       free(en);
-      return 0;
+      out.name = old->name;
+      out.success = False;
+      return out;
     }
     else { // symbol in lower level scope
       stack[stackTop] = en;
@@ -81,13 +95,15 @@ int addSymbol(char *name, enum SymbolKind kind) {
     stack[stackTop] = en;
     stackTop++;
   }
-  return 1;
+  out.name = name;
+  out.success = True;
+  return out;
 }
 
-int addLoopVar(char *name) {
+Bool addLoopVar(char *name) {
   // add a loop var symbol in higher level scope
   curScopeLevel++;
-  int y = addSymbol(name, SymbolKind_loopVar);
+  Bool y = addSymbol(name, SymbolKind_loopVar).success;
   curScopeLevel--;
   return y;
 }

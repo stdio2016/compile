@@ -2,6 +2,18 @@
 #ifndef AST_INCLUDED
 #define AST_INCLUDED
 
+// I like boolean, but I don't know whether I can use C99 or not
+#if __STDC_VERSION__ >= 199901L
+  #include <stdbool.h>
+  #define True true
+  #define False false
+  typedef bool Bool;
+#else
+  #define True 1
+  #define False 0
+  typedef int Bool;
+#endif
+
 struct Type {
   enum TypeEnum {
     Type_INTEGER, Type_REAL, Type_BOOLEAN, Type_STRING, Type_ARRAY, Type_VOID
@@ -17,8 +29,15 @@ struct Constant {
     char *str;
     int integer;
     float real;
-    int boolean;
+    Bool boolean;
   };
+};
+
+// for program and function name
+// name points to char array in symbol table, so don't release name
+struct PairName {
+  char *name;
+  Bool success; // name in symbol table?
 };
 
 char *dupstr(char *str);

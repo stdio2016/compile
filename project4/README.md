@@ -33,3 +33,5 @@ Ubuntu 17.10 和系計中的 Linux 主機 (我只測試過這兩個)
 執行後，如果檔案是語法正確的 P 程式，就會顯示 `There is no syntactic and semantic error!`
 
 要清除編譯中間檔，請在命令列輸入 `make clean`
+
+本程式可以支援彩色輸出，不過為了符合規格，我必須把這個功能設成編譯選項。啟動方法：在命令列輸入 `touch errReport.h; make CFLAGS=-DCOLORTEXT`

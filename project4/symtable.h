@@ -33,13 +33,14 @@ struct SymTableEntry {
 };
 
 void initSymTable(void);
+void destroySymTable(void);
 
 void startVarDecl(void);
 void startParamDecl(void);
 
 // name is not copied
-int addSymbol(char *name, enum SymbolKind kind);
-int addLoopVar(char *name);
+struct PairName addSymbol(char *name, enum SymbolKind kind);
+Bool addLoopVar(char *name);
 void removeLoopVar(void);
 
 void endVarDecl(struct Type *type);

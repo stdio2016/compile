@@ -4,7 +4,7 @@
 
 extern int linenum;             /* declared in tokens.l */
 
-void sementicError(const char *fmt, ...) {
+void semanticError(const char *fmt, ...) {
   va_list ap;
 
   va_start(ap, fmt);
