@@ -52,7 +52,7 @@ begin   { token(KWbegin); return BEGIN_; }
 boolean { token(KWboolean); return BOOLEAN; }
 def     { token(KWdef); return DEF; }
 do      { token(KWdo); return DO; }
-else    { token(KWelas); return ELSE; }
+else    { token(KWelse); return ELSE; }
 end     { token(KWend); return END; }
 false   { token(KWfalse); return FALSE; }
 for     { token(KWfor); return FOR; }
