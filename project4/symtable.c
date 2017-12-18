@@ -219,6 +219,10 @@ void endParamDecl(struct Type *type) {
 }
 
 void endFuncDecl(struct Type *retType, Bool funcExists) {
+  Bool isArray = retType->type == Type_ARRAY;
+  if (isArray) {
+    semanticError("a function cannot return an array type");
+  }
   if (!funcExists) {
     free(retType);
     return ;
@@ -226,6 +230,17 @@ void endFuncDecl(struct Type *retType, Bool funcExists) {
   size_t i = stackTop;
   while (i > 0 && stack[i-1]->kind == SymbolKind_parameter) {
     i--;
+  }
+  if (isArray) {
+    // remove function from symbol table
+    struct SymTableEntry *t = stack[i];
+    for (i = i + 1; i < stackTop; i++) {
+      stack[i-1] = stack[i];
+    }
+    stack[stackTop-1] = i;
+    popSymbol();
+    free(retType);
+    return ;
   }
   size_t nargs = stackTop - i;
   struct Type **argtype = malloc(sizeof(struct Type *) * nargs);

@@ -116,16 +116,16 @@ struct Expr *createLitExpr(struct Constant lit) {
   return n;
 }
 
-struct Expr *createVarExpr(const char *name) {
+struct Expr *createVarExpr(char *name) {
   struct Expr *n = malloc(sizeof(struct Expr));
   n->op = Op_VAR;
   n->type = NULL;
   n->next = NULL;
-  n->name = dupstr(name);
+  n->name = name;
   return n;
 }
 
-struct Expr *createFuncExpr(const char *name, struct Expr *args) {
+struct Expr *createFuncExpr(char *name, struct Expr *args) {
   struct Expr *n = malloc(sizeof(struct Expr));
   n->op = Op_FUNC;
   n->type = NULL;
@@ -136,16 +136,58 @@ struct Expr *createFuncExpr(const char *name, struct Expr *args) {
 }
 
 void destroyExpr(struct Expr *expr) {
+  struct Expr *p = expr, *q;
+  while (p != NULL) {
+    if (p->op == Op_VAR) {
+      free(p->name);
+    }
+    else if (p->op == Op_LIT) {
+      destroyConst(p->lit);
+    }
+    else {
+      destroyExpr(p->args);
+    }
+    if (p->type != NULL) free(p->type);
+    q = p;
+    p = p->next;
+    free(q);
+  }
+}
+
+char *OpName[] = {
+  "NONE",
+  "or", "and", "not",
+  "<", "<=", "<>", ">=", ">", "=",
+  "+", "-",
+  "*", "/", "mod",
+  "UMINUS", // -num
+  "FUNC", // f(x)
+  "INDEX", // a[i]
+  "", // literal
+  "VAR" // variable reference
+};
+
+void showExpr(struct Expr *expr, int depth) {
+  int i;
+  for (i = 0; i < depth; i++) {
+    printf("  ");
+  }
+  printf("%s", OpName[expr->op]);
   if (expr->op == Op_VAR) {
-    free(expr->name);
+    printf(" %s\n", expr->name);
   }
   else if (expr->op == Op_LIT) {
-    destroyConst(expr->lit);
+    showConst(expr->lit);
+    puts("");
   }
   else {
-    destroyExpr(expr->args);
+    puts("");
+    struct Expr *p = expr->args;
+    while (p != NULL) {
+      showExpr(p, depth + 1);
+      p = p->next;
+    }
   }
-  free(expr);
 }
 
 void initExprList(struct ExprList *list) {

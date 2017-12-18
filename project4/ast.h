@@ -82,9 +82,10 @@ void showConst(struct Constant c);
 
 struct Expr *createExpr(enum Operator op, struct Expr *op1, struct Expr *op2);
 struct Expr *createLitExpr(struct Constant lit);
-struct Expr *createVarExpr(const char *name);
-struct Expr *createFuncExpr(const char *name, struct Expr *args);
+struct Expr *createVarExpr(char *name);
+struct Expr *createFuncExpr(char *name, struct Expr *args);
 void destroyExpr(struct Expr *expr);
+void showExpr(struct Expr *expr, int depth);
 
 void initExprList(struct ExprList *list);
 void addToExprList(struct ExprList *list, struct Expr *expr);

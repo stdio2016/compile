@@ -14,6 +14,7 @@ extern int Opt_D;               /* declared in tokens.l */
 int yyerror( char *msg );
 extern int yylex(void);
 char *filename;
+struct Type *funcReturnType = NULL;
 %}
 
 %union {
@@ -23,6 +24,9 @@ char *filename;
   struct Constant lit;
   struct PairName pairName; // for program and function name
   Bool boolVal;
+  struct Expr *expr;
+  struct ExprList args;
+  enum Operator op;
 }
 
 // delimiters
@@ -58,6 +62,11 @@ char *filename;
 %type<name> identifier
 %type<typeEnum> scalar_type
 %type<type> type function_type
+
+%type<expr> variable_reference array_reference function_invoc
+%type<expr> minus_expr factor term expression relation_expr boolean_factor boolean_term boolean_expr
+%type<op> mul_op plus_op relop
+%type<args> arg_list arguments
 %%
 
 program		: programname SEMICOLON programbody END IDENT
@@ -115,14 +124,21 @@ function_decls :
 
 function_decl :
   function_name LPAREN { pushScope(); }
-  formal_args RPAREN function_type SEMICOLON { endFuncDecl($6, $<pairName>1.success); }
+  formal_args RPAREN function_type SEMICOLON
+  {
+    funcReturnType = copyType($6);
+    endFuncDecl($6, $<pairName>1.success);
+  }
   compound_stmt END IDENT
   {
     // popScope is done by compound_stmt
     if (strcmp($<pairName>1.name, $11) != 0) {
       semanticError("function end ID inconsist with the beginning ID");
     }
+    free($<pairName>1.name);
     free($11);
+    free(funcReturnType);
+    funcReturnType = NULL;
   }
 ;
 
@@ -135,7 +151,10 @@ function_type :
   }
 ;
 
-function_name : identifier { $<pairName>$ = addSymbol($1, SymbolKind_function); };
+function_name : identifier {
+  $<pairName>$ = addSymbol($1, SymbolKind_function);
+  $<pairName>$.name = dupstr($1);
+};
 
 formal_args :
   /* no args */
@@ -171,110 +190,153 @@ statement :
 ;
 
 simple_stmt :
-  variable_reference ASSIGN boolean_expr SEMICOLON
+  variable_reference ASSIGN boolean_expr SEMICOLON { destroyExpr($1); destroyExpr($3); }
 | PRINT boolean_expr SEMICOLON
 | READ variable_reference SEMICOLON
 ;
 
 variable_reference :
-  identifier { free($1); }
+  identifier { $$ = createVarExpr($1); }
 | array_reference
 ;
 
 array_reference :
-  identifier { free($1); } LBRACKET boolean_expr RBRACKET
+  identifier LBRACKET boolean_expr RBRACKET
+  {
+    $$ = createExpr(Op_INDEX, createVarExpr($1), $3);
+  }
 | array_reference LBRACKET boolean_expr RBRACKET
+  {
+    $$ = createExpr(Op_INDEX, $1, $3);
+  }
 ;
 
 minus_expr :
-  LPAREN boolean_expr RPAREN
+  LPAREN boolean_expr RPAREN { $$ = $2; }
 | variable_reference
 | function_invoc
 ;
 
 factor :
   minus_expr
-| literal_constant { if ($1.type == Type_STRING) free($1.str); }
+| literal_constant { $$ = createLitExpr($1); }
 | MINUS minus_expr
+  {
+    $$ = createExpr(Op_UMINUS, $2, NULL);
+  }
 ;
 
 term :
   factor
 | term mul_op factor
+  {
+    $$ = createExpr($2, $1, $3);
+  }
 ;
 
 mul_op :
-  MULTIPLY
-| DIVIDE
-| MOD
+  MULTIPLY { $$ = Op_MULTIPLY; }
+| DIVIDE { $$ = Op_DIVIDE; }
+| MOD { $$ = Op_MOD; }
 ;
 
 expression :
   term
 | expression plus_op term
+  {
+    $$ = createExpr($2, $1, $3);
+  }
 ;
 
 plus_op :
-  PLUS
-| MINUS
+  PLUS { $$ = Op_PLUS; }
+| MINUS { $$ = Op_MINUS; }
 ;
 
 relation_expr :
   expression
 | relation_expr relop expression
+  {
+    $$ = createExpr($2, $1, $3);
+  }
 ;
 
 relop :
-  LESS
-| LEQUAL
-| EQUAL
-| GEQUAL
-| GREATER
-| NOTEQUAL
+  LESS { $$ = Op_LESS; }
+| LEQUAL { $$ = Op_LEQUAL; }
+| EQUAL { $$ = Op_EQUAL; }
+| GEQUAL { $$ = Op_GEQUAL; }
+| GREATER { $$ = Op_GREATER; }
+| NOTEQUAL { $$ = Op_NOTEQUAL; }
 ;
 
 boolean_factor :
   relation_expr
 | NOT boolean_factor
+  {
+    $$ = createExpr(Op_NOT, $2, NULL);
+  }
 ;
 
 boolean_term :
   boolean_factor
 | boolean_term AND boolean_factor
+  {
+    $$ = createExpr(Op_AND, $1, $3);
+  }
 ;
 
 boolean_expr :
   boolean_term
 | boolean_expr OR boolean_term
+  {
+    $$ = createExpr(Op_OR, $1, $3);
+  }
 ;
 
 function_invoc : identifier LPAREN arg_list RPAREN
+  {
+    $$ = createFuncExpr($1, $3.first);
+  }
 ;
 
 arg_list :
-  /* no arguments */
+  /* no arguments */ { initExprList(&$$); }
 | arguments
 ;
 
 arguments :
   boolean_expr
+  {
+    initExprList(&$$);
+    addToExprList(&$$, $1);
+  }
 | arguments COMMA boolean_expr
+  {
+    addToExprList(&$1, $3); $$ = $1;
+  }
 ;
 
 conditional_stmt :
-  IF boolean_expr THEN
+  IF condition THEN
   statements
   ELSE
   statements
   END IF
 |
-  IF boolean_expr THEN
+  IF condition THEN
   statements
   END IF
 ;
 
+condition :
+  boolean_expr {
+    destroyExpr($1);
+  }
+;
+
 while_stmt :
-  WHILE boolean_expr DO
+  WHILE condition DO
   statements
   END DO
 ;
@@ -286,9 +348,12 @@ for_stmt :
 ;
 
 return_stmt : RETURN boolean_expr SEMICOLON
+  {
+    destroyExpr($2);
+  }
 ;
 
-procedure_call : function_invoc SEMICOLON
+procedure_call : function_invoc SEMICOLON { destroyExpr($1); }
 ;
 
 literal_constant :
