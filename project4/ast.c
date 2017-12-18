@@ -3,7 +3,7 @@
 #include <string.h>
 #include "ast.h"
 
-char *dupstr(char *str) {
+char *dupstr(const char *str) {
   size_t n = strlen(str);
   char *nstr = malloc(n + 1);
   strcpy(nstr, str);
@@ -87,3 +87,78 @@ void showConst(struct Constant c) {
     case Type_STRING: n += printf("\"%s\"", c.str); break;
   }
 }
+
+struct Type *createScalarType(enum TypeEnum type) {
+  struct Type *t = malloc(sizeof(struct Type));
+  t->type = type;
+  t->itemType = NULL;
+  return t;
+}
+
+struct Expr *createExpr(enum Operator op, struct Expr *arg1, struct Expr *arg2) {
+  struct Expr *n = malloc(sizeof(struct Expr));
+  n->op = op;
+  n->type = NULL;
+  n->next = NULL;
+  n->args = arg1;
+  if (arg1 != NULL) {
+    arg1->next = arg2;
+  }
+  return n;
+}
+
+struct Expr *createLitExpr(struct Constant lit) {
+  struct Expr *n = malloc(sizeof(struct Expr));
+  n->op = Op_LIT;
+  n->type = createScalarType(lit.type);
+  n->next = NULL;
+  n->lit = lit;
+  return n;
+}
+
+struct Expr *createVarExpr(const char *name) {
+  struct Expr *n = malloc(sizeof(struct Expr));
+  n->op = Op_VAR;
+  n->type = NULL;
+  n->next = NULL;
+  n->name = dupstr(name);
+  return n;
+}
+
+struct Expr *createFuncExpr(const char *name, struct Expr *args) {
+  struct Expr *n = malloc(sizeof(struct Expr));
+  n->op = Op_FUNC;
+  n->type = NULL;
+  n->next = NULL;
+  n->args = createVarExpr(name);
+  n->args->next = args;
+  return n;
+}
+
+void destroyExpr(struct Expr *expr) {
+  if (expr->op == Op_VAR) {
+    free(expr->name);
+  }
+  else if (expr->op == Op_LIT) {
+    destroyConst(expr->lit);
+  }
+  else {
+    destroyExpr(expr->args);
+  }
+  free(expr);
+}
+
+void initExprList(struct ExprList *list) {
+  list->first = list->last = NULL;
+}
+
+void addToExprList(struct ExprList *list, struct Expr *expr) {
+  if (list->first == NULL) {
+    list->first = expr;
+  }
+  else {
+    list->last->next = expr;
+  }
+  list->last = expr;
+}
+
