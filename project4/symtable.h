@@ -53,4 +53,6 @@ void popScope(int toShowScope);
 
 void destroyAttribute(struct Attribute *attr);
 void showAttribute(struct Attribute attr);
+
+struct SymTableEntry *getSymEntry(const char *name);
 #endif

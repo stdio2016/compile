@@ -10,7 +10,6 @@ void semanticError(const char *fmt, ...) {
   va_start(ap, fmt);
   printf(RED_TEXT "<Error>" NORMAL_TEXT " found in Line " BOLD_TEXT "%d: " NORMAL_TEXT, linenum);
   vprintf(fmt, ap);
-  printf("\n");
   va_end(ap);
 }
 

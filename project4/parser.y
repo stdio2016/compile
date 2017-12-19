@@ -4,6 +4,7 @@
 #include <string.h>
 #include "symtable.h"
 #include "errReport.h"
+#include "semcheck.h"
 
 extern int linenum;             /* declared in tokens.l */
 extern FILE *yyin;              /* declared by lex */
@@ -72,10 +73,10 @@ struct Type *funcReturnType = NULL;
 program		: programname SEMICOLON programbody END IDENT
 		{
 		  if (strcmp($<pairName>1.name, $5) != 0) {
-		    semanticError("program end ID inconsist with the beginning ID");
+		    semanticError("program end ID inconsist with the beginning ID\n");
 		  }
 		  if (strcmp($5, filename) != 0) {
-		    semanticError("program end ID inconsist with file name");
+		    semanticError("program end ID inconsist with file name\n");
 		  }
 		  popScope(Opt_D);
 		  free($5);
@@ -85,7 +86,7 @@ program		: programname SEMICOLON programbody END IDENT
 programname	: identifier
 		{
 		  if (strcmp($1, filename) != 0) {
-		    semanticError("program beginning ID inconsist with file name");
+		    semanticError("program beginning ID inconsist with file name\n");
 		  }
 		  $<pairName>$ = addSymbol($1, SymbolKind_program);
 		}
@@ -133,7 +134,7 @@ function_decl :
   {
     // popScope is done by compound_stmt
     if (strcmp($<pairName>1.name, $11) != 0) {
-      semanticError("function end ID inconsist with the beginning ID");
+      semanticError("function end ID inconsist with the beginning ID\n");
     }
     free($<pairName>1.name);
     free($11);
@@ -349,6 +350,7 @@ for_stmt :
 
 return_stmt : RETURN boolean_expr SEMICOLON
   {
+    returnCheck($2, funcReturnType);
     destroyExpr($2);
   }
 ;

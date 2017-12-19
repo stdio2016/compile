@@ -77,7 +77,7 @@ struct PairName addSymbol(char *name, enum SymbolKind kind) {
   struct PairName out;
   if (old != NULL) {
     if (old->level == curScopeLevel || old->kind == SymbolKind_loopVar) {
-      semanticError("symbol " BOLD_TEXT "%s" NORMAL_TEXT " is redeclared", name);
+      semanticError("symbol " BOLD_TEXT "%s" NORMAL_TEXT " is redeclared\n", name);
       MyHash_set(&table, name, old);
       free(name);
       free(en);
@@ -221,7 +221,7 @@ void endParamDecl(struct Type *type) {
 void endFuncDecl(struct Type *retType, Bool funcExists) {
   Bool isArray = retType->type == Type_ARRAY;
   if (isArray) {
-    semanticError("a function cannot return an array type");
+    semanticError("a function cannot return an array type\n");
   }
   if (!funcExists) {
     free(retType);
@@ -237,7 +237,7 @@ void endFuncDecl(struct Type *retType, Bool funcExists) {
     for (i = i + 1; i < stackTop; i++) {
       stack[i-1] = stack[i];
     }
-    stack[stackTop-1] = i;
+    stack[stackTop-1] = t;
     popSymbol();
     free(retType);
     return ;
@@ -280,4 +280,8 @@ void showAttribute(struct Attribute attr) {
   else if (attr.tag == Attribute_CONST) {
     showConst(attr.constant);
   }
+}
+
+struct SymTableEntry *getSymEntry(const char *name) {
+  return MyHash_get(&table, name);
 }
