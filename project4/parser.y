@@ -332,18 +332,24 @@ conditional_stmt :
 
 condition :
   boolean_expr {
+    conditionCheck($1, "if");
     destroyExpr($1);
   }
 ;
 
 while_stmt :
-  WHILE condition DO
+  WHILE boolean_expr {
+    conditionCheck($2, "while");
+    destroyExpr($2);
+  } DO
   statements
   END DO
 ;
 
 for_stmt :
-  FOR identifier { $<boolVal>$ = addLoopVar($2); } ASSIGN integer_constant TO integer_constant DO
+  FOR identifier { $<boolVal>$ = addLoopVar($2); } ASSIGN integer_constant TO integer_constant
+  { forCheck($5.integer, $7.integer); }
+  DO
   statements
   END DO { if ($<boolVal>3) removeLoopVar(); }
 ;
