@@ -46,7 +46,7 @@ void assignCheck(struct Expr *var, struct Expr *expr) {
     if (var->type->type == Type_ARRAY) {
       semanticError("array assignment is not allowed\n");
     }
-    else {
+    else if (var->op == Op_VAR) {
       struct SymTableEntry *a = getSymEntry(var->name);
       if (a == NULL) ;
       else if (a->kind == SymbolKind_loopVar) {
@@ -132,5 +132,40 @@ void mdArrayIndexCheck(struct Expr *arr) {
     arr->type = var->type->itemType;
     free(var->type);
     var->type = NULL;
+  }
+}
+
+void printCheck(struct Expr *expr) {
+  if (expr->type == NULL) return;
+  if (isScalarType(expr->type)) {
+    ;
+  }
+  else if (expr->type->type == Type_ARRAY) {
+    semanticError("operand of print statement is array type\n");
+  }
+  else if (expr->type->type == Type_VOID) {
+    semanticError("operand of print statement is void type\n");
+  }
+}
+
+void readCheck(struct Expr *var) {
+  if (var->type == NULL) return;
+  if (isScalarType(var->type)) {
+    if (var->op == Op_VAR) {
+      struct SymTableEntry *a = getSymEntry(var->name);
+      if (a == NULL) ;
+      else if (a->kind == SymbolKind_loopVar) {
+        semanticError("loop variable '%s' cannot be assigned\n", var->name);
+      }
+      else if (a->kind == SymbolKind_constant) {
+        semanticError("constant '%s' cannot be assigned\n", var->name);
+      }
+    }
+  }
+  else if (var->type->type == Type_ARRAY) {
+    semanticError("operand of read statement is array type\n");
+  }
+  else if (var->type->type == Type_VOID) {
+    semanticError("operand of read statement is void type\n");
   }
 }

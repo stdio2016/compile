@@ -197,7 +197,15 @@ simple_stmt :
     destroyExpr($1); destroyExpr($3);
   }
 | PRINT boolean_expr SEMICOLON
+  {
+    printCheck($2);
+    destroyExpr($2);
+  }
 | READ variable_reference SEMICOLON
+  {
+    readCheck($2);
+    destroyExpr($2);
+  }
 ;
 
 variable_reference :

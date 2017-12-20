@@ -126,6 +126,12 @@ Bool isLegalType(struct Type *type) {
   return type != NULL;
 }
 
+Bool isScalarType(struct Type *type) {
+  if (type == NULL) return False;
+  return type->type == Type_INTEGER || type->type == Type_REAL
+    || type->type == Type_BOOLEAN || type->type == Type_STRING;
+}
+
 struct Expr *createExpr(enum Operator op, struct Expr *arg1, struct Expr *arg2) {
   struct Expr *n = malloc(sizeof(struct Expr));
   n->op = op;

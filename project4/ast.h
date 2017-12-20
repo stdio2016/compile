@@ -79,6 +79,7 @@ Bool isSameType(struct Type *t1, struct Type *t2);
 Bool canConvertTypeImplicitly(struct Type *from, struct Type *to);
 // maybe my parser just created a malformed Type
 Bool isLegalType(struct Type *type);
+Bool isScalarType(struct Type *type);
 
 struct Constant copyConst(struct Constant c);
 void destroyConst(struct Constant c);

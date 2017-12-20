@@ -25,4 +25,8 @@ void arrayTypeCheck(struct Expr *arr);
 // check multi dimension array subscript
 void mdArrayIndexCheck(struct Expr *arr);
 
+// check print and read statement
+void printCheck(struct Expr *expr);
+void readCheck(struct Expr *expr);
+
 #endif
