@@ -108,6 +108,24 @@ Bool isSameType(struct Type *t1, struct Type *t2) {
   return True;
 }
 
+Bool canConvertTypeImplicitly(struct Type *from, struct Type *to) {
+  Bool y = isSameType(from, to);
+  if (y) return True;
+  if (from->type == Type_INTEGER && to->type == Type_REAL) return True;
+  return False;
+}
+
+Bool isLegalType(struct Type *type) {
+  if (type == NULL) return False;
+  while (type->type == Type_ARRAY) {
+    if (type->lowerBound >= type->upperBound) {
+      return False;
+    }
+    type = type->itemType;
+  }
+  return type != NULL;
+}
+
 struct Expr *createExpr(enum Operator op, struct Expr *arg1, struct Expr *arg2) {
   struct Expr *n = malloc(sizeof(struct Expr));
   n->op = op;

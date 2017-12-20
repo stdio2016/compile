@@ -187,13 +187,28 @@ void popScope(int toShowScope) {
   }
 }
 
-void endVarDecl(struct Type *type) {
-  size_t i;
-  for (i = varDeclStart; i < stackTop; i++) {
-    stack[i]->kind = SymbolKind_variable;
-    stack[i]->type = copyType(type);
+static void endVarOrParamDecl(struct Type *type, enum SymbolKind kind) {
+  size_t i, n = stackTop;
+  if (isLegalType(type)) {
+    for (i = varDeclStart; i < n; i++) {
+      stack[i]->kind = kind;
+      stack[i]->type = copyType(type);
+    }
+  }
+  else {
+    for (i = varDeclStart; i < n; i++) {
+      if (type != NULL && type->type == Type_ARRAY) {
+        semanticError("wrong dimension declaration for array %s\n", stack[i]->name);
+      }
+    }
+    for (i = varDeclStart; i < n; i++)
+      popSymbol();
   }
   destroyType(type);
+}
+
+void endVarDecl(struct Type *type) {
+  endVarOrParamDecl(type, SymbolKind_variable);
 }
 
 void endConstDecl(struct Constant constant) {
@@ -213,12 +228,7 @@ void endConstDecl(struct Constant constant) {
 }
 
 void endParamDecl(struct Type *type) {
-  size_t i;
-  for (i = varDeclStart; i < stackTop; i++) {
-    stack[i]->kind = SymbolKind_parameter;
-    stack[i]->type = copyType(type);
-  }
-  destroyType(type);
+  endVarOrParamDecl(type, SymbolKind_parameter);
 }
 
 void endFuncDecl(struct Type *retType, Bool funcExists) {

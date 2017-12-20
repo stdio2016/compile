@@ -76,6 +76,9 @@ void destroyType(struct Type *ptr);
 int showType(struct Type *type); // returns chars printed
 struct Type *createScalarType(enum TypeEnum type);
 Bool isSameType(struct Type *t1, struct Type *t2);
+Bool canConvertTypeImplicitly(struct Type *from, struct Type *to);
+// maybe my parser just created a malformed Type
+Bool isLegalType(struct Type *type);
 
 struct Constant copyConst(struct Constant c);
 void destroyConst(struct Constant c);

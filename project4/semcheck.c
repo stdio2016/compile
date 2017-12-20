@@ -42,24 +42,28 @@ void assignCheck(struct Expr *var, struct Expr *expr) {
   if (var->type == NULL || expr->type == NULL) { // variable error
     return ;
   }
-  if (isSameType(var->type, expr->type)) {
+  if (canConvertTypeImplicitly(expr->type, var->type)) {
     if (var->type->type == Type_ARRAY) {
       semanticError("array assignment is not allowed\n");
     }
+    else {
+      struct SymTableEntry *a = getSymEntry(var->name);
+      if (a == NULL) ;
+      else if (a->kind == SymbolKind_loopVar) {
+        semanticError("loop variable '%s' cannot be assigned\n", var->name);
+      }
+      else if (a->kind == SymbolKind_constant) {
+        semanticError("constant '%s' cannot be assigned\n", var->name);
+      }
+    }
   }
   else {
-    if (var->type->type == Type_REAL && expr->type->type == Type_INTEGER) { // type coercion
-      ;
-    }
-    else {
-      semanticError("type mismatch, LHS = ");
-      showType(var->type);
-      printf(", RHS = ");
-      showType(expr->type);
-      puts("");
-    }
+    semanticError("type mismatch, LHS = ");
+    showType(var->type);
+    printf(", RHS = ");
+    showType(expr->type);
+    puts("");
   }
-
 }
 
 static struct SymTableEntry *readableVarCheck(const char *name, const char *vararr) {
