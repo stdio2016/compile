@@ -238,6 +238,7 @@ factor :
 | MINUS minus_expr
   {
     $$ = createExpr(Op_UMINUS, $2, NULL);
+    unaryOpCheck($$);
   }
 ;
 
@@ -246,6 +247,10 @@ term :
 | term mul_op factor
   {
     $$ = createExpr($2, $1, $3);
+    if ($2 == Op_MOD)
+      modOpCheck($$);
+    else
+      arithOpCheck($$);
   }
 ;
 
@@ -260,6 +265,7 @@ expression :
 | expression plus_op term
   {
     $$ = createExpr($2, $1, $3);
+    arithOpCheck($$);
   }
 ;
 
@@ -273,6 +279,7 @@ relation_expr :
 | relation_expr relop expression
   {
     $$ = createExpr($2, $1, $3);
+    relOpCheck($$);
   }
 ;
 
@@ -290,6 +297,7 @@ boolean_factor :
 | NOT boolean_factor
   {
     $$ = createExpr(Op_NOT, $2, NULL);
+    unaryOpCheck($$);
   }
 ;
 
@@ -298,6 +306,7 @@ boolean_term :
 | boolean_term AND boolean_factor
   {
     $$ = createExpr(Op_AND, $1, $3);
+    boolOpCheck($$);
   }
 ;
 
@@ -306,6 +315,7 @@ boolean_expr :
 | boolean_expr OR boolean_term
   {
     $$ = createExpr(Op_OR, $1, $3);
+    boolOpCheck($$);
   }
 ;
 

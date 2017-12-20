@@ -169,3 +169,103 @@ void readCheck(struct Expr *var) {
     semanticError("operand of read statement is void type\n");
   }
 }
+
+static void binaryOpErr(struct Expr *op1, struct Expr *op2, enum Operator op) {
+  semanticError("invalid operand to binary '%s', LHS = ", OpName[op]);
+  showType(op1->type);
+  printf(", RHS = ");
+  showType(op2->type);
+  puts("");
+}
+
+void arithOpCheck(struct Expr *expr) {
+  struct Expr *op1 = expr->args, *op2 = op1->next;
+  if (op1->type == NULL || op2->type == NULL) return ;
+  Bool lhs = op1->type->type == Type_INTEGER || op1->type->type == Type_REAL;
+  Bool rhs = op2->type->type == Type_INTEGER || op2->type->type == Type_REAL;
+  if (lhs && rhs) { // correct
+    if (op1->type->type == Type_REAL || op2->type->type == Type_REAL) {
+      // coerce to real
+      expr->type = createScalarType(Type_REAL);
+    }
+    else {
+      expr->type = createScalarType(Type_INTEGER);
+    }
+  }
+  else if (expr->op == Op_PLUS
+    && op1->type->type == Type_STRING && op2->type->type == Type_STRING) {
+    // string + string is legal
+    expr->type = createScalarType(Type_STRING);
+  }
+  else {
+    binaryOpErr(op1, op2, expr->op);
+  }
+}
+
+void modOpCheck(struct Expr *expr) {
+  struct Expr *op1 = expr->args, *op2 = op1->next;
+  if (op1->type == NULL || op2->type == NULL) return ;
+  Bool lhs = op1->type->type == Type_INTEGER;
+  Bool rhs = op2->type->type == Type_INTEGER;
+  if (lhs && rhs) { // correct
+    expr->type = createScalarType(Type_INTEGER);
+  }
+  else {
+    binaryOpErr(op1, op2, expr->op);
+  }
+}
+
+void boolOpCheck(struct Expr *expr) {
+  struct Expr *op1 = expr->args, *op2 = op1->next;
+  if (op1->type == NULL || op2->type == NULL) return ;
+  Bool lhs = op1->type->type == Type_BOOLEAN;
+  Bool rhs = op2->type->type == Type_BOOLEAN;
+  if (lhs && rhs) { // correct
+    expr->type = createScalarType(Type_BOOLEAN);
+  }
+  else {
+    binaryOpErr(op1, op2, expr->op);
+  }
+}
+
+void relOpCheck(struct Expr *expr) {
+  struct Expr *op1 = expr->args, *op2 = op1->next;
+  if (op1->type == NULL || op2->type == NULL) return ;
+  Bool lhs = op1->type->type == Type_INTEGER || op1->type->type == Type_REAL;
+  Bool rhs = op2->type->type == Type_INTEGER || op2->type->type == Type_REAL;
+  if (lhs && rhs) { // correct
+    expr->type = createScalarType(Type_BOOLEAN);
+  }
+  else {
+    binaryOpErr(op1, op2, expr->op);
+  }
+}
+
+// there are only 2 unary ops: '-' and 'not'
+void unaryOpCheck(struct Expr *expr) {
+  struct Expr *op = expr->args;
+  if (op->type == NULL) return ;
+  Bool good = False;
+  if (expr->op == Op_UMINUS) {
+    if (op->type->type == Type_INTEGER || op->type->type == Type_REAL) {
+      expr->type = copyType(op->type);
+      good = True;
+    }
+    else {
+      semanticError("invalid operand to unary minus, type = ");
+    }
+  }
+  else if (expr->op == Op_NOT) {
+    if (op->type->type == Type_BOOLEAN) {
+      expr->type = createScalarType(Type_BOOLEAN);
+      good = True;
+    }
+    else {
+      semanticError("invalid operand to unary not, type = ");
+    }
+  }
+  if (!good) {
+    showType(op->type);
+    puts("");
+  }
+}

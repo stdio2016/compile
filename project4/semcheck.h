@@ -29,4 +29,11 @@ void mdArrayIndexCheck(struct Expr *arr);
 void printCheck(struct Expr *expr);
 void readCheck(struct Expr *expr);
 
+// check arithmetic operator
+void arithOpCheck(struct Expr *expr);
+void modOpCheck(struct Expr *expr);
+void boolOpCheck(struct Expr *expr);
+void relOpCheck(struct Expr *expr);
+void unaryOpCheck(struct Expr *expr);
+
 #endif
