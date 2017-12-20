@@ -13,4 +13,16 @@ void forCheck(int lowerBound, int upperBound);
 // check condition expr part of conditional (if...else) and while statement
 void conditionCheck(struct Expr *expr, const char *ifwhile);
 
+// check for assignment
+void assignCheck(struct Expr *var, struct Expr *expr);
+
+// check variable type
+void varTypeCheck(struct Expr *var);
+
+// check array type
+void arrayTypeCheck(struct Expr *arr);
+
+// check multi dimension array subscript
+void mdArrayIndexCheck(struct Expr *arr);
+
 #endif

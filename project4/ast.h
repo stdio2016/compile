@@ -75,7 +75,7 @@ struct Type *copyType(struct Type *ptr);
 void destroyType(struct Type *ptr);
 int showType(struct Type *type); // returns chars printed
 struct Type *createScalarType(enum TypeEnum type);
-Bool typeEqual(struct Type *t1, struct Type *t2);
+Bool isSameType(struct Type *t1, struct Type *t2);
 
 struct Constant copyConst(struct Constant c);
 void destroyConst(struct Constant c);

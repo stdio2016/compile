@@ -191,13 +191,17 @@ statement :
 ;
 
 simple_stmt :
-  variable_reference ASSIGN boolean_expr SEMICOLON { destroyExpr($1); destroyExpr($3); }
+  variable_reference ASSIGN boolean_expr SEMICOLON
+  {
+    assignCheck($1, $3);
+    destroyExpr($1); destroyExpr($3);
+  }
 | PRINT boolean_expr SEMICOLON
 | READ variable_reference SEMICOLON
 ;
 
 variable_reference :
-  identifier { $$ = createVarExpr($1); }
+  identifier { $$ = createVarExpr($1);  varTypeCheck($$); }
 | array_reference
 ;
 
@@ -205,10 +209,12 @@ array_reference :
   identifier LBRACKET boolean_expr RBRACKET
   {
     $$ = createExpr(Op_INDEX, createVarExpr($1), $3);
+    arrayTypeCheck($$);
   }
 | array_reference LBRACKET boolean_expr RBRACKET
   {
     $$ = createExpr(Op_INDEX, $1, $3);
+    mdArrayIndexCheck($$);
   }
 ;
 

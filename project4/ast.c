@@ -95,7 +95,7 @@ struct Type *createScalarType(enum TypeEnum type) {
   return t;
 }
 
-Bool typeEqual(struct Type *t1, struct Type *t2) {
+Bool isSameType(struct Type *t1, struct Type *t2) {
   while (t1->type == Type_ARRAY && t2->type == Type_ARRAY) {
     // check size of each dimension
     if (t1->upperBound - t1->lowerBound != t2->upperBound - t2->lowerBound) {

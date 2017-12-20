@@ -105,6 +105,9 @@ Bool addLoopVar(char *name) {
   curScopeLevel++;
   Bool y = addSymbol(name, SymbolKind_loopVar).success;
   curScopeLevel--;
+  if (y) {
+    stack[stackTop-1]->type = createScalarType(Type_INTEGER);
+  }
   return y;
 }
 
