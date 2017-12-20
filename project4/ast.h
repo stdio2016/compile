@@ -26,6 +26,7 @@ enum Operator {
   Op_LIT, // literal
   Op_VAR // variable reference
 };
+extern char *OpName[];
 
 struct Type {
   enum TypeEnum {
