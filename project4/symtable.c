@@ -246,8 +246,8 @@ void endFuncDecl(struct Type *retType, Bool funcExists) {
   }
   if (isArray) {
     // remove function from symbol table
-    struct SymTableEntry *t = stack[i];
-    for (i = i + 1; i < stackTop; i++) {
+    struct SymTableEntry *t = stack[i-1];
+    for (i = i; i < stackTop; i++) {
       stack[i-1] = stack[i];
     }
     stack[stackTop-1] = t;
