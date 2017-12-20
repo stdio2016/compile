@@ -478,6 +478,10 @@ int  main( int argc, char **argv )
 	free(filename);
 	//yylex_destroy();
 	fclose(fp);
-
+	if (errorCount == 0) {
+		puts("|-------------------------------------------|");
+		puts("| There is no syntactic and semantic error! |");
+		puts("|-------------------------------------------|");
+	}
 	exit(0);
 }

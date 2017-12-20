@@ -12,6 +12,7 @@
   #define BOLD_TEXT
 #endif
 
+extern int errorCount;
 void semanticError(const char *fmt, ...);
 
 #endif
