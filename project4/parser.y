@@ -138,7 +138,7 @@ function_decl :
     }
     free($<pairName>1.name);
     free($11);
-    free(funcReturnType);
+    destroyType(funcReturnType);
     funcReturnType = NULL;
   }
 ;

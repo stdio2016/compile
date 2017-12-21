@@ -198,7 +198,7 @@ void destroyExpr(struct Expr *expr) {
     else {
       destroyExpr(p->args);
     }
-    if (p->type != NULL) free(p->type);
+    if (p->type != NULL) destroyType(p->type);
     q = p;
     p = p->next;
     free(q);

@@ -237,7 +237,7 @@ void endFuncDecl(struct Type *retType, Bool funcExists) {
     semanticError("a function cannot return an array type\n");
   }
   if (!funcExists) {
-    free(retType);
+    destroyType(retType);
     return ;
   }
   size_t i = stackTop;
@@ -252,7 +252,7 @@ void endFuncDecl(struct Type *retType, Bool funcExists) {
     }
     stack[stackTop-1] = t;
     popSymbol();
-    free(retType);
+    destroyType(retType);
     return ;
   }
   size_t nargs = stackTop - i;
