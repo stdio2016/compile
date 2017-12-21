@@ -322,6 +322,7 @@ boolean_expr :
 function_invoc : identifier LPAREN arg_list RPAREN
   {
     $$ = createFuncExpr($1, $3.first);
+    functionCheck($$);
   }
 ;
 

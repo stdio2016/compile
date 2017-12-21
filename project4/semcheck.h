@@ -36,4 +36,7 @@ void boolOpCheck(struct Expr *expr);
 void relOpCheck(struct Expr *expr);
 void unaryOpCheck(struct Expr *expr);
 
+// check function call
+void functionCheck(struct Expr *expr);
+
 #endif

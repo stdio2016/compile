@@ -269,3 +269,39 @@ void unaryOpCheck(struct Expr *expr) {
     puts("");
   }
 }
+
+void functionCheck(struct Expr *expr) {
+  struct Expr *nm = expr->args, *args = nm->next;
+  struct SymTableEntry *a = getSymEntry(nm->name);
+  // find a function symbol
+  if (a == NULL) {
+    semanticError("symbol '%s' is not defined\n", nm->name);
+    return ;
+  }
+  while (a->kind != SymbolKind_function && a->prev != NULL) {
+    a = a->prev;
+  }
+  if (a->kind != SymbolKind_function) {
+    semanticError("symbol '%s' is not a function\n", nm->name);
+    return ;
+  }
+  expr->type = copyType(a->type);
+  int i, nargs = a->attr.argType.arity;
+  struct Expr *ptr = args;
+  for (i = 0; i < nargs && ptr != NULL; i++, ptr = ptr->next) {
+    if (ptr->type == NULL) continue;
+    if (!canConvertTypeImplicitly(ptr->type, a->attr.argType.types[i])) {
+      semanticError("argument %d of '%s' type mismatch, expected '", i+1, nm->name);
+      showType(a->attr.argType.types[i]);
+      printf("' but argument is '");
+      showType(ptr->type);
+      puts("'");
+    }
+  }
+  if (ptr != NULL) {
+    semanticError("too many arguments to function '%s'\n", nm->name);
+  }
+  else if (i < nargs) {
+    semanticError("too few arguments to function '%s'\n", nm->name);
+  }
+}
