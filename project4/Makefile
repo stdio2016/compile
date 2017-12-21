@@ -13,7 +13,7 @@ y.tab.c y.tab.h: parser.y
 	$(YACC) -d $<
 lex.yy.c: tokens.l
 	$(LEX) $<
-y.tab.o: y.tab.c symtable.h ast.h errReport.h semcheck.h errReport.h
+y.tab.o: y.tab.c symtable.h ast.h errReport.h semcheck.h
 lex.yy.o: lex.yy.c y.tab.h ast.h
 
 MyHash.o: MyHash.c MyHash.h
