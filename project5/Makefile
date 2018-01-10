@@ -1,5 +1,5 @@
 ALL = parser
-OBJS = y.tab.o lex.yy.o MyHash.o symtable.o ast.o errReport.o semcheck.o
+OBJS = y.tab.o lex.yy.o MyHash.o symtable.o ast.o errReport.o semcheck.o StringBuffer.o
 LIBS = -lfl
 CC = gcc
 YACC = yacc
@@ -21,6 +21,7 @@ symtable.o: symtable.c symtable.h MyHash.h ast.h errReport.h
 ast.o: ast.c ast.h
 errReport.o: errReport.c errReport.h
 semcheck.o: semcheck.c semcheck.h symtable.h ast.h errReport.h
+StringBuffer.o: StringBuffer.c StringBuffer.h
 
 .PHONY: clean
 clean:
