@@ -110,21 +110,8 @@ Bool isSameType(struct Type *t1, struct Type *t2) {
 
 Bool canConvertTypeImplicitly(struct Type *from, struct Type *to) {
   // I think integer [5] is not real [5]
-
-  //Bool y = isSameType(from, to);
-  //if (y) return True;
-  //if (from->type == Type_INTEGER && to->type == Type_REAL) return True;
-  //return False;
-
-  while (from->type == Type_ARRAY && to->type == Type_ARRAY) {
-    // check size of each dimension
-    if (from->upperBound - from->lowerBound != to->upperBound - to->lowerBound) {
-      return False;
-    }
-    from = from->itemType;
-    to = to->itemType;
-  }
-  if (from->type == to->type) return True;
+  Bool y = isSameType(from, to);
+  if (y) return True;
   if (from->type == Type_INTEGER && to->type == Type_REAL) return True;
   return False;
 }

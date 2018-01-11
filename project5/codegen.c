@@ -82,6 +82,14 @@ void BoolExpr_toImmed(struct BoolExpr *expr) {
 }
 
 int genLabel() {
+  int lbl = genInsertPoint();
+  genCode("Label",0,0);
+  genIntCode(lbl+1);
+  genCode(":\n",0,0);
+  return lbl;
+}
+
+int genInsertPoint() {
   labelCount++;
   if (labelCount >= codeArraySize) {
     if (labelCount >= codeArrayCap) {
@@ -109,6 +117,10 @@ void genCode(const char *code, int useStack, int stackUpDown) {
   else {
     fprintf(codeOut, "%s", code);
   }
+}
+
+void genCodeAt(const char *code, int addr) {
+  StrBuf_append(&codeArray[addr], code);
 }
 
 void genIntCode(int num) {
@@ -238,8 +250,39 @@ void genFunctionEnd() {
   fprintf(codeOut, ".limit locals %ld\n", localVarLimit);
   fputs(codeArray[0].buf, codeOut);
   for (i = 1; i <= labelCount; i++) {
-    fprintf(codeOut, "L%d:\n", i+1);
     fputs(codeArray[i].buf, codeOut);
   }
   fputs(".end method\n", codeOut);
+}
+
+struct PatchList *makePatchList(int addr) {
+  struct PatchList *lis = malloc(sizeof *lis);
+  lis->addr = addr;
+  lis->next = lis->prev = lis;
+  return lis;
+}
+
+void destroyPatchList(struct PatchList *list) {
+  if (list == NULL) return;
+  struct PatchList *p = list;
+  while (p != list) {
+    struct PatchList *q = p->next;
+    free(p);
+    p = q;
+  }
+}
+
+void backpatch(struct PatchList *list, int label) {
+  // TODO
+}
+
+struct PatchList *mergePatchList(struct PatchList *p1, struct PatchList *p2) {
+  if (p1 == NULL) return p2;
+  if (p2 == NULL) return p1;
+  struct PatchList *p1Last = p1->prev;
+  p1Last->next = p2;
+  p1->prev = p2->prev;
+  p2->prev->next = p1;
+  p2->prev = p1Last;
+  return p1;
 }

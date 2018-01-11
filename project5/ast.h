@@ -53,6 +53,7 @@ struct Constant {
 struct ExprList {
   struct Expr *first;
   struct Expr *last;
+  struct PatchList *marks;
 };
 
 struct Expr {

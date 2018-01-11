@@ -32,6 +32,7 @@ struct Type *funcReturnType = NULL;
   enum Operator op;
   struct BoolExpr boolExpr;
   struct Statement stmt;
+  int label;
 }
 
 // delimiters
@@ -72,6 +73,7 @@ struct Type *funcReturnType = NULL;
 %type<boolExpr> minus_expr factor term expression relation_expr boolean_factor boolean_term boolean_expr
 %type<op> mul_op plus_op relop
 %type<args> arg_list arguments
+%type<label> Mark
 %%
 
 program		: programname SEMICOLON
@@ -266,20 +268,28 @@ factor:
 
 term:
   factor
-| term mul_op factor
+| term mul_op Mark factor
   {
-    $$ = createBoolExpr($2, $1, $3);
+    $$ = createBoolExpr($2, $1, $4);
     if ($2 == Op_MOD)
       modOpCheck($$.expr);
     else
       arithOpCheck($$.expr);
     Bool isFloat = $$.expr->type->type == Type_REAL;
+    if (isFloat) {
+      if ($1.expr->type->type == Type_INTEGER) genCodeAt("  i2f\n", $3);
+      if ($4.expr->type->type == Type_INTEGER) genCode("  i2f\n",0,0);
+    }
     if ($2 == Op_MULTIPLY) genCode(isFloat ? "  fmul\n" : "  imul\n", 0, -1);
     else if ($2 == Op_DIVIDE) genCode(isFloat ? "  fdiv\n" : "  idiv\n", 0, -1);
     else if ($2 == Op_MOD) genCode(isFloat ? "  frem\n" : "  irem\n", 0, -1);
     // frem is illegal in P language
   }
 ;
+
+Mark: {
+  $$ = genInsertPoint()-1;
+};
 
 mul_op:
   MULTIPLY { $$ = Op_MULTIPLY; }
@@ -289,11 +299,15 @@ mul_op:
 
 expression:
   term
-| expression plus_op term
+| expression plus_op Mark term
   {
-    $$ = createBoolExpr($2, $1, $3);
+    $$ = createBoolExpr($2, $1, $4);
     arithOpCheck($$.expr);
     Bool isFloat = $$.expr->type->type == Type_REAL;
+    if (isFloat) {
+      if ($1.expr->type->type == Type_INTEGER) genCodeAt("  i2f\n", $3);
+      if ($4.expr->type->type == Type_INTEGER) genCode("  i2f\n",0,0);
+    }
     if ($2 == Op_PLUS) {
       if ($$.expr->type->type == Type_STRING) { // concat string
         genCode("  invokevirtual java/lang/String/concat(Ljava/lang/String;)Ljava/lang/String;\n", 0, -1);
@@ -311,11 +325,19 @@ plus_op:
 
 relation_expr:
   expression
-| relation_expr relop expression
+| relation_expr relop Mark expression
   {
     //TODO relop
-    $$ = createBoolExpr($2, $1, $3);
+    $$ = createBoolExpr($2, $1, $4);
     relOpCheck($$.expr);
+    int real1 = $1.expr->type->type == Type_REAL;
+    int real2 = $4.expr->type->type == Type_REAL;
+    if (real1 || real2) {
+      if (real1) genCode("  i2f\n",0,0);
+      if (real2) genCodeAt("  i2f\n",$3);
+    }
+    else {
+    }
     $$.isTFlist = True;
   }
 ;
@@ -370,6 +392,7 @@ function_invoc: identifier LPAREN arg_list RPAREN
   {
     $$ = createFuncExpr($1, $3.first);
     functionCheck($$);
+    // TODO function call/coerce
   }
 ;
 
@@ -383,10 +406,12 @@ arguments:
   {
     initExprList(&$$);
     addToExprList(&$$, BoolExprToExpr($1));
+    $$.marks = NULL;
   }
-| arguments COMMA boolean_expr
+| arguments COMMA Mark boolean_expr
   {
-    addToExprList(&$1, BoolExprToExpr($3)); $$ = $1;
+    addToExprList(&$1, BoolExprToExpr($4)); $$ = $1;
+    $$.marks = mergePatchList($1.marks, makePatchList($3));
   }
 ;
 

@@ -23,9 +23,12 @@ void BoolExpr_toImmed(struct BoolExpr *expr);
 
 // generate a label!
 int genLabel();
+// generate an insert point without a label
+int genInsertPoint(void);
 
 // output code!
 void genCode(const char *code, int useStack, int stackUpDown);
+void genCodeAt(const char *code, int addr);
 // output integer
 void genIntCode(int num);
 // output type
@@ -39,6 +42,10 @@ void genConstCode(struct Constant val);
 void genFunctionStart(const char *funname);
 void genProgMain(void);
 void genFunctionEnd();
+
+
+struct PatchList *makePatchList(int addr);
+void destroyPatchList(struct PatchList *list);
 
 // will make *list unusable
 void backpatch(struct PatchList *list, int label);
