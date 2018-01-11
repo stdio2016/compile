@@ -70,6 +70,22 @@ struct PairName {
   Bool success; // name in symbol table?
 };
 
+// for code generation
+struct PatchList {
+  int addr;
+  struct PatchList *next, *prev;
+};
+
+struct BoolExpr {
+  Bool isTFlist;
+  struct Expr *expr;
+  struct PatchList *truelist, *falselist;
+};
+
+struct Statement {
+  struct PatchList *nextlist;
+};
+
 char *dupstr(const char *str);
 
 struct Type *copyType(struct Type *ptr);

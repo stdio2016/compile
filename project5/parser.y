@@ -5,6 +5,7 @@
 #include "symtable.h"
 #include "errReport.h"
 #include "semcheck.h"
+#include "codegen.h"
 
 extern int linenum;             /* declared in tokens.l */
 extern FILE *yyin;              /* declared by lex */
@@ -28,6 +29,8 @@ struct Type *funcReturnType = NULL;
   struct Expr *expr;
   struct ExprList args;
   enum Operator op;
+  struct BoolExpr boolExpr;
+  struct Statement stmt;
 }
 
 // delimiters
@@ -65,7 +68,7 @@ struct Type *funcReturnType = NULL;
 %type<type> type function_type
 
 %type<expr> variable_reference array_reference function_invoc
-%type<expr> minus_expr factor term expression relation_expr boolean_factor boolean_term boolean_expr
+%type<boolExpr> minus_expr factor term expression relation_expr boolean_factor boolean_term boolean_expr
 %type<op> mul_op plus_op relop
 %type<args> arg_list arguments
 %%
@@ -193,13 +196,13 @@ statement :
 simple_stmt :
   variable_reference ASSIGN boolean_expr SEMICOLON
   {
-    assignCheck($1, $3);
-    destroyExpr($1); destroyExpr($3);
+    assignCheck($1, BoolExprToExpr($3));
+    destroyExpr($1); destroyExpr($3.expr);
   }
 | PRINT boolean_expr SEMICOLON
   {
-    printCheck($2);
-    destroyExpr($2);
+    printCheck(BoolExprToExpr($2));
+    destroyExpr($2.expr);
   }
 | READ variable_reference SEMICOLON
   {
@@ -216,29 +219,29 @@ variable_reference :
 array_reference :
   identifier LBRACKET boolean_expr RBRACKET
   {
-    $$ = createExpr(Op_INDEX, createVarExpr($1), $3);
+    $$ = createExpr(Op_INDEX, createVarExpr($1), BoolExprToExpr($3));
     arrayTypeCheck($$);
   }
 | array_reference LBRACKET boolean_expr RBRACKET
   {
-    $$ = createExpr(Op_INDEX, $1, $3);
+    $$ = createExpr(Op_INDEX, $1, BoolExprToExpr($3));
     mdArrayIndexCheck($$);
   }
 ;
 
 minus_expr :
   LPAREN boolean_expr RPAREN { $$ = $2; }
-| variable_reference
-| function_invoc
+| variable_reference { $$ = ExprToBoolExpr($1); }
+| function_invoc { $$ = ExprToBoolExpr($1); }
 ;
 
 factor :
   minus_expr
-| literal_constant { $$ = createLitExpr($1); }
+| literal_constant { $$ = ExprToBoolExpr(createLitExpr($1)); }
 | MINUS minus_expr
   {
-    $$ = createExpr(Op_UMINUS, $2, NULL);
-    unaryOpCheck($$);
+    $$ = ExprToBoolExpr(createExpr(Op_UMINUS, BoolExprToExpr($2), NULL));
+    unaryOpCheck($$.expr);
   }
 ;
 
@@ -246,11 +249,11 @@ term :
   factor
 | term mul_op factor
   {
-    $$ = createExpr($2, $1, $3);
+    $$ = createBoolExpr($2, $1, $3);
     if ($2 == Op_MOD)
-      modOpCheck($$);
+      modOpCheck($$.expr);
     else
-      arithOpCheck($$);
+      arithOpCheck($$.expr);
   }
 ;
 
@@ -264,8 +267,8 @@ expression :
   term
 | expression plus_op term
   {
-    $$ = createExpr($2, $1, $3);
-    arithOpCheck($$);
+    $$ = createBoolExpr($2, $1, $3);
+    arithOpCheck($$.expr);
   }
 ;
 
@@ -278,8 +281,10 @@ relation_expr :
   expression
 | relation_expr relop expression
   {
-    $$ = createExpr($2, $1, $3);
-    relOpCheck($$);
+    //TODO relop
+    $$ = createBoolExpr($2, $1, $3);
+    relOpCheck($$.expr);
+    $$.isTFlist = True;
   }
 ;
 
@@ -296,8 +301,14 @@ boolean_factor :
   relation_expr
 | NOT boolean_factor
   {
-    $$ = createExpr(Op_NOT, $2, NULL);
-    unaryOpCheck($$);
+    //TODO not
+    $$ = ExprToBoolExpr(createExpr(Op_NOT, $2.expr, NULL));
+    unaryOpCheck($$.expr);
+    $$.isTFlist = $2.isTFlist;
+    if ($2.isTFlist) {
+    }
+    else {
+    }
   }
 ;
 
@@ -305,8 +316,10 @@ boolean_term :
   boolean_factor
 | boolean_term AND boolean_factor
   {
-    $$ = createExpr(Op_AND, $1, $3);
-    boolOpCheck($$);
+    //TODO and
+    $$ = ExprToBoolExpr(createExpr(Op_AND, $1.expr, $3.expr));
+    boolOpCheck($$.expr);
+    $$.isTFlist = True;
   }
 ;
 
@@ -314,8 +327,10 @@ boolean_expr :
   boolean_term
 | boolean_expr OR boolean_term
   {
-    $$ = createExpr(Op_OR, $1, $3);
-    boolOpCheck($$);
+    //TODO or
+    $$ = ExprToBoolExpr(createExpr(Op_OR, $1.expr, $3.expr));
+    boolOpCheck($$.expr);
+    $$.isTFlist = True;
   }
 ;
 
@@ -335,11 +350,11 @@ arguments :
   boolean_expr
   {
     initExprList(&$$);
-    addToExprList(&$$, $1);
+    addToExprList(&$$, BoolExprToExpr($1));
   }
 | arguments COMMA boolean_expr
   {
-    addToExprList(&$1, $3); $$ = $1;
+    addToExprList(&$1, BoolExprToExpr($3)); $$ = $1;
   }
 ;
 
@@ -357,15 +372,17 @@ conditional_stmt :
 
 condition :
   boolean_expr {
-    conditionCheck($1, "if");
-    destroyExpr($1);
+    //TODO
+    conditionCheck($1.expr, "if");
+    destroyExpr($1.expr);
   }
 ;
 
 while_stmt :
   WHILE boolean_expr {
-    conditionCheck($2, "while");
-    destroyExpr($2);
+    //TODO
+    conditionCheck($2.expr, "while");
+    destroyExpr($2.expr);
   } DO
   statements
   END DO
@@ -381,8 +398,8 @@ for_stmt :
 
 return_stmt : RETURN boolean_expr SEMICOLON
   {
-    returnCheck($2, funcReturnType);
-    destroyExpr($2);
+    returnCheck(BoolExprToExpr($2), funcReturnType);
+    destroyExpr($2.expr);
   }
 ;
 
