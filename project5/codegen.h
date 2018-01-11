@@ -32,6 +32,8 @@ void genIntCode(int num);
 void genTypeCode(struct Type *type);
 // output function name and type
 void genFuncTypeCode(const char *funname);
+// output constant
+void genConstCode(struct Constant val);
 
 // generate a function, called at end of a function
 void genFunctionStart(const char *funname);

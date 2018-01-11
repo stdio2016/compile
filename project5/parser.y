@@ -250,11 +250,17 @@ minus_expr:
 
 factor:
   minus_expr
-| literal_constant { $$ = ExprToBoolExpr(createLitExpr($1)); }
+| literal_constant
+  {
+    $$ = ExprToBoolExpr(createLitExpr($1));
+    genConstCode($1);
+  }
 | MINUS minus_expr
   {
     $$ = ExprToBoolExpr(createExpr(Op_UMINUS, BoolExprToExpr($2), NULL));
     unaryOpCheck($$.expr);
+    Bool isFloat = $$.expr->type->type == Type_REAL;
+    genCode(isFloat ? "  fneg\n" : "  ineg\n", 0, 0);
   }
 ;
 
@@ -267,6 +273,11 @@ term:
       modOpCheck($$.expr);
     else
       arithOpCheck($$.expr);
+    Bool isFloat = $$.expr->type->type == Type_REAL;
+    if ($2 == Op_MULTIPLY) genCode(isFloat ? "  fmul\n" : "  imul\n", 0, -1);
+    else if ($2 == Op_DIVIDE) genCode(isFloat ? "  fdiv\n" : "  idiv\n", 0, -1);
+    else if ($2 == Op_MOD) genCode(isFloat ? "  frem\n" : "  irem\n", 0, -1);
+    // frem is illegal in P language
   }
 ;
 
@@ -282,6 +293,14 @@ expression:
   {
     $$ = createBoolExpr($2, $1, $3);
     arithOpCheck($$.expr);
+    Bool isFloat = $$.expr->type->type == Type_REAL;
+    if ($2 == Op_PLUS) {
+      if ($$.expr->type->type == Type_STRING) { // concat string
+        genCode("  invokevirtual java/lang/String/concat(Ljava/lang/String;)Ljava/lang/String;\n", 0, -1);
+      }
+      else genCode(isFloat ? "  fadd\n" : "  iadd\n", 0, -1);
+    }
+    else if ($2 == Op_MINUS) genCode(isFloat ? "  fsub\n" : "  isub\n", 0, -1);
   }
 ;
 

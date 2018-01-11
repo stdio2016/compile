@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include "semcheck.h"
 #include "errReport.h"
-#include "codegen.h"
 
 void returnCheck(struct Expr *expr, struct Type *expected) {
   if (expected == NULL) {

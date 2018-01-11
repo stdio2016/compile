@@ -156,6 +156,63 @@ void genFunctionStart(const char *funname) {
   StrBuf_clear(&codeArray[0]);
 }
 
+void genConstCode(struct Constant val) {
+  if (val.type == Type_BOOLEAN) {
+    genCode(val.boolean ? "  iconst_1\n" : "  iconst_0\n", 1, +1);
+  }
+  else if (val.type == Type_STRING) {
+    genCode("  ldc \"",0,0);
+    size_t i;
+    for (i = 0; val.str[i]; i++) {
+      if (val.str[i] == '\\') {
+        if (val.str[i+1] == 'n') {
+          genCode("\\n",0,0);
+          i++;
+        }
+        else genCode("\\\\",0,0);
+      }
+      else if (val.str[i] == '"') genCode("\\\"",0,0);
+      else {
+        char a[4] = {0,0,0,0};
+        a[0] = val.str[i];
+        genCode(a, 0, 0);
+      }
+    }
+    genCode("\"\n",1,+1);
+  }
+  else if (val.type == Type_INTEGER) {
+    if (val.integer == -1) genCode("  iconst_m1\n",1,+1);
+    else {
+      if (val.integer >= 0 && val.integer <= 5)
+        genCode("  iconst_",0,0);
+      else if (val.integer >= -128 && val.integer <= 127)
+        genCode("  bipush ",0,0);
+      else if (val.integer >= -32768 && val.integer <= 32767)
+        genCode("  sipush ",0,0);
+      else genCode("  ldc ",0,0);
+      genIntCode(val.integer);
+      genCode("\n",1,+1);
+    }
+  }
+  else if (val.type == Type_REAL) {
+    char buf[100];
+    if (val.real == 1.0/0.0) strcpy(buf, "  ldc 1.0e+100");
+    else if (val.real == -1.0/0.0) strcpy(buf, "  ldc -1.0e+100");
+    else if (val.real != val.real) strcpy(buf, "  getstatic java/lang/Float/NaN F");
+    else if (val.real == 2.0) strcpy(buf, "  fconst_2");
+    else if (val.real == 1.0) strcpy(buf, "  fconst_1");
+    else if (val.real == 0.0) strcpy(buf, "  fconst_0");
+    else {
+      sprintf(buf, "  ldc %.7g", val.real);
+      if (strchr(buf, '.') == NULL) {
+        strcat(buf, ".0");
+      }
+    }
+    strcat(buf, "\n");
+    genCode(buf,1,+1);
+  }
+}
+
 void genProgMain() {
   labelCount = 0;
   stackLimit = 0;
