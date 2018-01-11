@@ -6,6 +6,13 @@
 
 char *asmName;
 FILE *codeOut;
+
+// generator state
+static struct StringBuffer *codeArray;
+static int codeArraySize, codeArrayCap, labelCount;
+int stackLimit, virtStackPos;
+static Bool inFunction = False;
+
 void initCodeGen(const char *filename) {
   size_t n = strlen(filename), i, dot = n;
   asmName = malloc(n+3); // filename '.' 'j' '\0'
@@ -19,6 +26,17 @@ void initCodeGen(const char *filename) {
   strcpy(asmName, filename);
   strcpy(asmName+dot, ".j");
   codeOut = fopen(asmName, "w");
+  codeArrayCap = 5;
+  codeArraySize = 1;
+  codeArray = malloc(sizeof(struct StringBuffer) * codeArrayCap);
+  StrBuf_init(&codeArray[0]);
+  inFunction = False;
+}
+
+void endCodeGen() {
+  free(codeArray);
+  fclose(codeOut);
+  free(asmName);
 }
 
 struct BoolExpr createBoolExpr(enum Operator op, struct BoolExpr op1, struct BoolExpr op2) {
@@ -49,6 +67,51 @@ void BoolExpr_toTFlist(struct BoolExpr *expr) {
 void BoolExpr_toImmed(struct BoolExpr *expr) {
 }
 
+int genLabel() {
+  labelCount++;
+  if (labelCount >= codeArraySize) {
+    if (labelCount >= codeArrayCap) {
+      codeArray = realloc(codeArray, codeArrayCap*2);
+      if (codeArray == NULL) exit(-1); // out of memory!
+      codeArrayCap *= 2;
+    }
+    StrBuf_init(&codeArray[labelCount]);
+    codeArraySize++;
+  }
+  else {
+    StrBuf_clear(&codeArray[labelCount]);
+  }
+  genIntCode(labelCount);
+  genCode(":\n",0,0);
+  return labelCount;
+}
+
 void genCode(const char *code, int useStack, int stackUpDown) {
-  fprintf(codeOut, "%s", code);
+  if (inFunction) {
+    StrBuf_append(&codeArray[labelCount], code);
+    if (virtStackPos + useStack > stackLimit) {
+      stackLimit = virtStackPos + useStack;
+    }
+    virtStackPos += stackUpDown;
+  }
+  else {
+    fprintf(codeOut, "%s", code);
+  }
+}
+
+void genIntCode(int num) {
+  char buf[35];
+  sprintf(buf, "%d", num);
+  genCode(buf, 0, 0);
+}
+
+void genFunctionStart() {
+  labelCount = 0;
+  stackLimit = 0;
+  virtStackPos = 0;
+  inFunction = True;
+}
+
+void genFunctionEnd() {
+  inFunction = False;
 }

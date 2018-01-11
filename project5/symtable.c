@@ -16,6 +16,7 @@ struct SymTableEntry **stack;
 size_t stackSize, stackTop;
 #define INIT_STACK_SIZE 5
 size_t varDeclStart;
+size_t localVarCount, localVarLimit;
 
 int curScopeLevel;
 
@@ -107,6 +108,9 @@ Bool addLoopVar(char *name) {
   curScopeLevel--;
   if (y) {
     stack[stackTop-1]->type = createScalarType(Type_INTEGER);
+    stack[stackTop-1]->attr.tag = Attribute_LOCALVAR;
+    stack[stackTop-1]->attr.tmpVarId = localVarCount++;
+    if (localVarCount > localVarLimit) localVarLimit = localVarCount;
   }
   return y;
 }
@@ -120,6 +124,9 @@ void removeLoopVar(void) {
 void popSymbol(void) {
   stackTop--;
   struct SymTableEntry *top = stack[stackTop];
+  if (top->attr.tag == Attribute_LOCALVAR) {
+    localVarCount--;
+  }
   if (top->prev == NULL) { // no shadowed symbol
     struct HashBucket *b = MyHash_delete(&table, top->name);
     free(b);
@@ -144,6 +151,10 @@ void startParamDecl(void) {
 
 void pushScope(void) {
   curScopeLevel++;
+  if (curScopeLevel == 1) {
+    localVarCount = 0;
+    localVarLimit = 0;
+  }
 }
 
 void showScope(size_t stackstart) {
@@ -193,6 +204,11 @@ static void endVarOrParamDecl(struct Type *type, enum SymbolKind kind) {
     for (i = varDeclStart; i < n; i++) {
       stack[i]->kind = kind;
       stack[i]->type = copyType(type);
+      if (curScopeLevel > 0) {
+        stack[i]->attr.tag = Attribute_LOCALVAR;
+        stack[i]->attr.tmpVarId = localVarCount++;
+        if (localVarCount > localVarLimit) localVarLimit = localVarCount;
+      }
     }
   }
   else {
@@ -292,6 +308,9 @@ void showAttribute(struct Attribute attr) {
   }
   else if (attr.tag == Attribute_CONST) {
     showConst(attr.constant);
+  }
+  else if (attr.tag == Attribute_LOCALVAR) {
+    printf("temp var id %d", attr.tmpVarId);
   }
 }
 

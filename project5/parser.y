@@ -505,6 +505,7 @@ int  main( int argc, char **argv )
 	yyparse();
 	destroySymTable();
 	free(filename);
+	endCodeGen();
 	//yylex_destroy();
 	fclose(fp);
 	if (errorCount == 0) {

@@ -6,6 +6,9 @@
 // called at start
 void initCodeGen(const char *filename);
 
+// called at end
+void endCodeGen(void);
+
 // BoolExpr to Expr conversion
 struct BoolExpr createBoolExpr(enum Operator op, struct BoolExpr op1, struct BoolExpr op2);
 struct Expr *BoolExprToExpr(struct BoolExpr expr);
@@ -22,6 +25,8 @@ int genLabel();
 
 // output code!
 void genCode(const char *code, int useStack, int stackUpDown);
+// output integer
+void genIntCode(int num);
 
 // generate a function, called at end of a function
 void genFunction();

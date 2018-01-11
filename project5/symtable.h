@@ -12,7 +12,7 @@ extern const char *SymbolKindName[];
 
 struct Attribute {
   enum {
-    Attribute_ARGTYPE, Attribute_CONST, Attribute_NONE
+    Attribute_ARGTYPE, Attribute_CONST, Attribute_NONE, Attribute_LOCALVAR
   } tag;
   union {
     struct Attribute_ArgType {
@@ -20,6 +20,7 @@ struct Attribute {
       struct Type **types;
     } argType;
     struct Constant constant;
+    int tmpVarId;
   };
 };
 
