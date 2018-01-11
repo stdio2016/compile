@@ -501,6 +501,7 @@ int  main( int argc, char **argv )
 	
 	yyin = fp;
 	initSymTable();
+	initCodeGen(argv[1]);
 	yyparse();
 	destroySymTable();
 	free(filename);
