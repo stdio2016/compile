@@ -26,12 +26,15 @@ enum Operator {
   Op_LIT, // literal
   Op_VAR // variable reference
 };
+
+enum TypeEnum {
+  Type_INTEGER, Type_REAL, Type_BOOLEAN, Type_STRING, Type_ARRAY, Type_VOID
+};
+
 extern char *OpName[];
 
 struct Type {
-  enum TypeEnum {
-    Type_INTEGER, Type_REAL, Type_BOOLEAN, Type_STRING, Type_ARRAY, Type_VOID
-  } type;
+  enum TypeEnum type;
   // only for array
   int upperBound, lowerBound;
   struct Type *itemType;

@@ -106,17 +106,17 @@ programbody	: var_or_const_decls  function_decls
 		{ genCode("  return\n",0,0); genFunctionEnd(); }
 		;
 
-var_or_const_decls :
+var_or_const_decls:
   /* empty */
 | var_or_const_decls var_decl
 | var_or_const_decls const_decl
 ;
 
-var_decl :
+var_decl:
   VAR startVarDecl identifier_list COLON type SEMICOLON { endVarDecl($5); }
 ;
 
-const_decl :
+const_decl:
   VAR startVarDecl identifier_list COLON literal_constant SEMICOLON { endConstDecl($5); }
 ;
 
@@ -124,17 +124,17 @@ startVarDecl: {
   startVarDecl();
 };
 
-identifier_list :
+identifier_list:
   identifier { addSymbol($1, SymbolKind_variable); }
 | identifier_list COMMA identifier { addSymbol($3, SymbolKind_variable); }
 ;
 
-function_decls :
+function_decls:
   /* empty */
 | function_decls  function_decl
 ;
 
-function_decl :
+function_decl:
   function_name LPAREN { pushScope(); }
   formal_args RPAREN function_type SEMICOLON
   {
@@ -159,7 +159,7 @@ function_decl :
   }
 ;
 
-function_type :
+function_type:
   COLON type { $$ = $2; }
 | /* procedure has no type */ {
     $$ = malloc(sizeof(struct Type));
@@ -168,35 +168,35 @@ function_type :
   }
 ;
 
-function_name : identifier {
+function_name: identifier {
   $<pairName>$ = addSymbol($1, SymbolKind_function);
   $<pairName>$.name = dupstr($<pairName>$.name);
 };
 
-formal_args :
+formal_args:
   /* no args */
 | formal_args_list
 ;
 
-formal_args_list :
+formal_args_list:
   formal_arg
 | formal_args_list SEMICOLON formal_arg
 ;
 
-formal_arg : { startParamDecl(); }
+formal_arg: { startParamDecl(); }
   identifier_list COLON type { endParamDecl($4); }
 ;
 
-compound_stmt :
+compound_stmt:
   BEGIN_  var_or_const_decls  statements END { popScope(Opt_D); }
 ;
 
-statements :
+statements:
   /* empty */
 | statements statement
 ;
 
-statement :
+statement:
   { pushScope(); } compound_stmt
 | simple_stmt
 | conditional_stmt
@@ -206,7 +206,7 @@ statement :
 | procedure_call
 ;
 
-simple_stmt :
+simple_stmt:
   variable_reference ASSIGN boolean_expr SEMICOLON
   {
     assignCheck($1, BoolExprToExpr($3));
@@ -224,12 +224,12 @@ simple_stmt :
   }
 ;
 
-variable_reference :
+variable_reference:
   identifier { $$ = createVarExpr($1);  varTypeCheck($$); }
 | array_reference
 ;
 
-array_reference :
+array_reference:
   identifier LBRACKET boolean_expr RBRACKET
   {
     $$ = createExpr(Op_INDEX, createVarExpr($1), BoolExprToExpr($3));
@@ -242,13 +242,13 @@ array_reference :
   }
 ;
 
-minus_expr :
+minus_expr:
   LPAREN boolean_expr RPAREN { $$ = $2; }
 | variable_reference { $$ = ExprToBoolExpr($1); }
 | function_invoc { $$ = ExprToBoolExpr($1); }
 ;
 
-factor :
+factor:
   minus_expr
 | literal_constant { $$ = ExprToBoolExpr(createLitExpr($1)); }
 | MINUS minus_expr
@@ -258,7 +258,7 @@ factor :
   }
 ;
 
-term :
+term:
   factor
 | term mul_op factor
   {
@@ -270,13 +270,13 @@ term :
   }
 ;
 
-mul_op :
+mul_op:
   MULTIPLY { $$ = Op_MULTIPLY; }
 | DIVIDE { $$ = Op_DIVIDE; }
 | MOD { $$ = Op_MOD; }
 ;
 
-expression :
+expression:
   term
 | expression plus_op term
   {
@@ -285,12 +285,12 @@ expression :
   }
 ;
 
-plus_op :
+plus_op:
   PLUS { $$ = Op_PLUS; }
 | MINUS { $$ = Op_MINUS; }
 ;
 
-relation_expr :
+relation_expr:
   expression
 | relation_expr relop expression
   {
@@ -301,7 +301,7 @@ relation_expr :
   }
 ;
 
-relop :
+relop:
   LESS { $$ = Op_LESS; }
 | LEQUAL { $$ = Op_LEQUAL; }
 | EQUAL { $$ = Op_EQUAL; }
@@ -310,7 +310,7 @@ relop :
 | NOTEQUAL { $$ = Op_NOTEQUAL; }
 ;
 
-boolean_factor :
+boolean_factor:
   relation_expr
 | NOT boolean_factor
   {
@@ -325,7 +325,7 @@ boolean_factor :
   }
 ;
 
-boolean_term :
+boolean_term:
   boolean_factor
 | boolean_term AND boolean_factor
   {
@@ -336,7 +336,7 @@ boolean_term :
   }
 ;
 
-boolean_expr :
+boolean_expr:
   boolean_term
 | boolean_expr OR boolean_term
   {
@@ -347,19 +347,19 @@ boolean_expr :
   }
 ;
 
-function_invoc : identifier LPAREN arg_list RPAREN
+function_invoc: identifier LPAREN arg_list RPAREN
   {
     $$ = createFuncExpr($1, $3.first);
     functionCheck($$);
   }
 ;
 
-arg_list :
+arg_list:
   /* no arguments */ { initExprList(&$$); }
 | arguments
 ;
 
-arguments :
+arguments:
   boolean_expr
   {
     initExprList(&$$);
@@ -371,7 +371,7 @@ arguments :
   }
 ;
 
-conditional_stmt :
+conditional_stmt:
   IF condition THEN
   statements
   ELSE
@@ -383,7 +383,7 @@ conditional_stmt :
   END IF
 ;
 
-condition :
+condition:
   boolean_expr {
     //TODO
     conditionCheck($1.expr, "if");
@@ -391,7 +391,7 @@ condition :
   }
 ;
 
-while_stmt :
+while_stmt:
   WHILE boolean_expr {
     //TODO
     conditionCheck($2.expr, "while");
@@ -401,7 +401,7 @@ while_stmt :
   END DO
 ;
 
-for_stmt :
+for_stmt:
   FOR identifier { $<boolVal>$ = addLoopVar($2); } ASSIGN integer_constant TO integer_constant
   { forCheck($5.integer, $7.integer); }
   DO
@@ -409,17 +409,17 @@ for_stmt :
   END DO { if ($<boolVal>3) removeLoopVar(); }
 ;
 
-return_stmt : RETURN boolean_expr SEMICOLON
+return_stmt: RETURN boolean_expr SEMICOLON
   {
     returnCheck(BoolExprToExpr($2), funcReturnType);
     destroyExpr($2.expr);
   }
 ;
 
-procedure_call : function_invoc SEMICOLON { destroyExpr($1); }
+procedure_call: function_invoc SEMICOLON { destroyExpr($1); }
 ;
 
-literal_constant :
+literal_constant:
   integer_constant
 | STR_LIT
 | REAL_LIT
@@ -431,7 +431,7 @@ literal_constant :
 | FALSE { $$.type = Type_BOOLEAN; $$.boolean = False; }
 ;
 
-type :
+type:
   scalar_type
   {
     $$ = malloc(sizeof(struct Type));
@@ -448,7 +448,7 @@ type :
   }
 ;
 
-scalar_type :
+scalar_type:
   BOOLEAN  { $$ = Type_BOOLEAN; }
 | INTEGER  { $$ = Type_INTEGER; }
 | REAL  { $$ = Type_REAL; }
@@ -456,11 +456,11 @@ scalar_type :
 ;
 
 // must be positive
-positive_integer_constant :
+positive_integer_constant:
   INT_LIT
 ;
 
-integer_constant :
+integer_constant:
   INT_LIT
 | MINUS INT_LIT {
   $$ = $2;
