@@ -16,6 +16,7 @@ extern int Opt_D;               /* declared in tokens.l */
 int yyerror( char *msg );
 extern int yylex(void);
 char *filename;
+char *progClassName;
 struct Type *funcReturnType = NULL;
 %}
 
@@ -73,16 +74,21 @@ struct Type *funcReturnType = NULL;
 %type<args> arg_list arguments
 %%
 
-program		: programname SEMICOLON programbody END IDENT
+program		: programname SEMICOLON
 		{
-		  if (strcmp($<pairName>1.name, $5) != 0) {
+		  progClassName = $<pairName>1.name;
+		  genProgStart();
+		}
+		  programbody END IDENT
+		{
+		  if (strcmp($<pairName>1.name, $6) != 0) {
 		    semanticError("program end ID inconsist with the beginning ID\n");
 		  }
-		  if (strcmp($5, filename) != 0) {
+		  if (strcmp($6, filename) != 0) {
 		    semanticError("program end ID inconsist with file name\n");
 		  }
 		  popScope(Opt_D);
-		  free($5);
+		  free($6);
 		}
 		;
 
@@ -95,7 +101,9 @@ programname	: identifier
 		}
 		;
 
-programbody	: var_or_const_decls  function_decls  { pushScope(); } compound_stmt
+programbody	: var_or_const_decls  function_decls
+		{ pushScope(); genProgMain(); } compound_stmt
+		{ genCode("  return\n",0,0); genFunctionEnd(); }
 		;
 
 var_or_const_decls :
@@ -132,6 +140,7 @@ function_decl :
   {
     funcReturnType = copyType($6);
     endFuncDecl($6, $<pairName>1.success);
+    genFunctionStart($<pairName>1.name);
   }
   compound_stmt END IDENT
   {
@@ -139,6 +148,10 @@ function_decl :
     if (strcmp($<pairName>1.name, $11) != 0) {
       semanticError("function end ID inconsist with the beginning ID\n");
     }
+    // append return at end
+    if (funcReturnType->type == Type_VOID)
+      genCode("  return\n",0,0);
+    genFunctionEnd();
     free($<pairName>1.name);
     free($11);
     destroyType(funcReturnType);
@@ -157,7 +170,7 @@ function_type :
 
 function_name : identifier {
   $<pairName>$ = addSymbol($1, SymbolKind_function);
-  $<pairName>$.name = dupstr($1);
+  $<pairName>$.name = dupstr($<pairName>$.name);
 };
 
 formal_args :

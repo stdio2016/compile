@@ -3,15 +3,18 @@
 #include <string.h>
 #include "codegen.h"
 #include "StringBuffer.h"
+#include "symtable.h"
 
 char *asmName;
 FILE *codeOut;
+extern char *progClassName; // defined in parser.y
 
 // generator state
 static struct StringBuffer *codeArray;
 static int codeArraySize, codeArrayCap, labelCount;
 int stackLimit, virtStackPos;
 static Bool inFunction = False;
+extern size_t localVarCount, localVarLimit; // defined in symtable.c
 
 void initCodeGen(const char *filename) {
   size_t n = strlen(filename), i, dot = n;
@@ -33,7 +36,18 @@ void initCodeGen(const char *filename) {
   inFunction = False;
 }
 
+void genProgStart() {
+  fprintf(codeOut, ".class public %s\n", progClassName);
+  fprintf(codeOut, ".super java/lang/Object\n");
+  fprintf(codeOut, "\n");
+  fprintf(codeOut, ".field public static _sc Ljava/util/Scanner;\n");
+}
+
 void endCodeGen() {
+  int i;
+  for (i = 0; i < codeArraySize; i++) {
+    StrBuf_destroy(&codeArray[i]);
+  }
   free(codeArray);
   fclose(codeOut);
   free(asmName);
@@ -81,8 +95,6 @@ int genLabel() {
   else {
     StrBuf_clear(&codeArray[labelCount]);
   }
-  genIntCode(labelCount);
-  genCode(":\n",0,0);
   return labelCount;
 }
 
@@ -105,13 +117,72 @@ void genIntCode(int num) {
   genCode(buf, 0, 0);
 }
 
-void genFunctionStart() {
+void genTypeCode(struct Type *type) {
+  if (type == NULL) return ;
+  while (type->type == Type_ARRAY) {
+    genCode("[",0,0);
+    type = type->itemType;
+  }
+  switch (type->type) {
+    case Type_INTEGER: genCode("I",0,0); break;
+    case Type_REAL: genCode("F",0,0); break;
+    case Type_BOOLEAN: genCode("Z",0,0); break;
+    case Type_STRING: genCode("Ljava/lang/String;",0,0); break;
+    case Type_VOID: genCode("V",0,0); break;
+  }
+}
+
+void genFuncTypeCode(const char *funname) {
+  genCode(funname, 0, 0);
+  struct SymTableEntry *e = getSymEntry(funname);
+  if (e == NULL || e->kind != SymbolKind_function) return;
+  genCode("(", 0, 0);
+  int n = e->attr.argType.arity, i;
+  for (i = 0; i < n; i++) {
+    genTypeCode(e->attr.argType.types[i]);
+  }
+  genCode(")", 0, 0);
+  genTypeCode(e->type);
+}
+
+void genFunctionStart(const char *funname) {
   labelCount = 0;
   stackLimit = 0;
   virtStackPos = 0;
+  fprintf(codeOut, ".method public static ");
+  genFuncTypeCode(funname);
+  fputs("\n", codeOut);
   inFunction = True;
+  StrBuf_clear(&codeArray[0]);
+}
+
+void genProgMain() {
+  labelCount = 0;
+  stackLimit = 0;
+  virtStackPos = 0;
+  fputs(".method public static main([Ljava/lang/String;)V\n", codeOut);
+  inFunction = True;
+  StrBuf_clear(&codeArray[0]);
+  localVarCount = localVarLimit = 1; // because the first temp var is argument of main
+  genCode("  new java/util/Scanner\n", 1, +1);
+  genCode("  dup\n", 1, +1);
+  genCode("  getstatic java/lang/System/in Ljava/io/InputStream;\n", 1, +1);
+  genCode("  invokespecial java/util/Scanner/<init>(Ljava/io/InputStream;)V\n", 0, -2);
+  genCode("  putstatic ", 0, 0);
+  genCode(progClassName, 0, 0);
+  genCode("/_sc Ljava/util/Scanner;\n", 0, -1);
+  //TODO generate global var initialize
 }
 
 void genFunctionEnd() {
   inFunction = False;
+  int i;
+  fprintf(codeOut, ".limit stack %d\n", stackLimit);
+  fprintf(codeOut, ".limit locals %ld\n", localVarLimit);
+  fputs(codeArray[0].buf, codeOut);
+  for (i = 1; i <= labelCount; i++) {
+    fprintf(codeOut, "L%d:\n", i+1);
+    fputs(codeArray[i].buf, codeOut);
+  }
+  fputs(".end method\n", codeOut);
 }

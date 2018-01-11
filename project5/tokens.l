@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "ast.h"
 #include "y.tab.h"
+#include "codegen.h"
 #define LIST  mystrcat(yytext)
 #define token(t)            {LIST; if (Opt_T) printf("<%s>\n", #t);}
 #define tokenMultiChar(t)   {LIST; if (Opt_T) printf("<%s>\n", (t));}
@@ -19,6 +20,7 @@ char buf[MAX_LINE_LENG ];
 char strlit_buf[ MAX_LINE_LENG ];
 char *buf_ptr = buf;
 void mystrcat(const char *text);
+void dumpInAsmOut(void);
 %}
 %x C_COMMENT
 float  [0-9]+\.[0-9]+
@@ -142,13 +144,17 @@ while   { token(KWwhile); return WHILE; }
 <INITIAL,C_COMMENT>\r?\n  {
       if (Opt_S)
         printf("%d: %s\n", linenum, buf);
+      dumpInAsmOut();
       linenum++;
       buf[0] = '\0';
       buf_ptr = buf;
     }
 <INITIAL><<EOF>>  {
-      if (Opt_S && buf_ptr != buf)
-        printf("%d: %s\n", linenum, buf);
+      if (buf_ptr != buf) {
+        dumpInAsmOut();
+        if (Opt_S)
+          printf("%d: %s\n", linenum, buf);
+      }
       return 0;
     }
 "/*" { // C style comment
@@ -195,3 +201,10 @@ void mystrcat(const char *text)
   *buf_ptr = '\0';
 }
 
+void dumpInAsmOut() {
+  genCode("; Line ", 0, 0);
+  genIntCode(linenum);
+  genCode(": ", 0, 0);
+  genCode(buf, 0, 0);
+  genCode("\n", 0, 0);
+}

@@ -22,7 +22,7 @@ ast.o: ast.c ast.h
 errReport.o: errReport.c errReport.h
 semcheck.o: semcheck.c semcheck.h symtable.h ast.h errReport.h
 StringBuffer.o: StringBuffer.c StringBuffer.h
-codegen.o: codegen.c codegen.h StringBuffer.h ast.h
+codegen.o: codegen.c codegen.h StringBuffer.h ast.h symtable.h
 .PHONY: clean
 clean:
 	-rm $(OBJS) $(ALL)

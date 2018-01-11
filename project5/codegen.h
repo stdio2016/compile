@@ -5,6 +5,7 @@
 
 // called at start
 void initCodeGen(const char *filename);
+void genProgStart(void);
 
 // called at end
 void endCodeGen(void);
@@ -27,9 +28,15 @@ int genLabel();
 void genCode(const char *code, int useStack, int stackUpDown);
 // output integer
 void genIntCode(int num);
+// output type
+void genTypeCode(struct Type *type);
+// output function name and type
+void genFuncTypeCode(const char *funname);
 
 // generate a function, called at end of a function
-void genFunction();
+void genFunctionStart(const char *funname);
+void genProgMain(void);
+void genFunctionEnd();
 
 // will make *list unusable
 void backpatch(struct PatchList *list, int label);
