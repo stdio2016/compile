@@ -43,7 +43,13 @@ void genConstCode(struct Constant val);
 void genFunctionStart(const char *funname);
 void genProgMain(void);
 void genFunctionEnd();
+
 void genFunctionCall(struct SymTableEntry *e, const char *funname, struct PatchList *list, struct Expr *args);
+void genLoadVar(const char *varname);
+void genStoreVar(const char *varname);
+void genLoadArray(struct Expr *expr);
+void genStoreArray(struct Expr *expr);
+void genArrayIndexShift(int offset);
 
 struct PatchList *makePatchList(int addr);
 void destroyPatchList(struct PatchList *list);

@@ -218,6 +218,8 @@ simple_stmt:
   variable_reference ASSIGN boolean_expr SEMICOLON
   {
     assignCheck($1, BoolExprToExpr($3));
+    if ($1->op == Op_VAR) genStoreVar($1->name);
+    else if ($1->op == Op_INDEX) genStoreArray($1);
     destroyExpr($1); destroyExpr($3.expr);
   }
 | PRINT boolean_expr SEMICOLON
@@ -238,21 +240,35 @@ variable_reference:
 ;
 
 array_reference:
-  identifier LBRACKET boolean_expr RBRACKET
+  identifier { genLoadVar($1); } LBRACKET boolean_expr RBRACKET
   {
-    $$ = createExpr(Op_INDEX, createVarExpr($1), BoolExprToExpr($3));
+    $$ = createExpr(Op_INDEX, createVarExpr($1), BoolExprToExpr($4));
     arrayTypeCheck($$);
+    struct SymTableEntry *e = getSymEntry($1);
+    if (e != NULL && e->type->type == Type_ARRAY) { // not base 0 index
+      int off = e->type->lowerBound;
+      genArrayIndexShift(off);
+    }
   }
-| array_reference LBRACKET boolean_expr RBRACKET
+| array_reference { genCode("  aaload\n",0,-1); } LBRACKET boolean_expr RBRACKET
   {
-    $$ = createExpr(Op_INDEX, $1, BoolExprToExpr($3));
+    $$ = createExpr(Op_INDEX, $1, BoolExprToExpr($4));
+    if ($1->type != NULL) { // not base 0 index
+      int off = $1->type->lowerBound;
+      genArrayIndexShift(off);
+    }
     mdArrayIndexCheck($$);
   }
 ;
 
 minus_expr:
   LPAREN boolean_expr RPAREN { $$ = $2; }
-| variable_reference { $$ = ExprToBoolExpr($1); }
+| variable_reference
+  {
+    $$ = ExprToBoolExpr($1);
+    if ($1->op == Op_VAR) genLoadVar($1->name);
+    else if ($1->op == Op_INDEX) genLoadArray($1);
+  }
 | function_invoc { $$ = ExprToBoolExpr($1); }
 ;
 

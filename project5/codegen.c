@@ -287,6 +287,129 @@ void genFunctionCall(struct SymTableEntry *fun, const char *funname, struct Patc
   genCode("\n", n, +n);
 }
 
+void genLoadVar(const char *varname) {
+  struct SymTableEntry *e = getSymEntry(varname);
+  if (e == NULL) {
+    genCode("  iconst_0 ; unknown variable ",1,+1);
+    genCode(varname,0,0);
+    genCode("\n",0,0);
+    return;
+  }
+  if (e->kind == SymbolKind_constant) { // constant
+    genConstCode(e->attr.constant);
+  }
+  else if (e->level == 0) { // global var
+    genCode("  getstatic ",1,+1);
+    genCode(progClassName,0,0);
+    genCode("/",0,0);
+    genCode(varname,0,0);
+    genCode(" ",0,0);
+    genTypeCode(e->type);
+    genCode("\n",0,0);
+  }
+  else { // local var
+    switch (e->type->type) {
+      case Type_BOOLEAN: case Type_INTEGER:
+        genCode("  iload",1,+1); break;
+      case Type_REAL:
+        genCode("  fload",1,+1); break;
+      default:
+        genCode("  aload",1,+1); break;
+    }
+    if (e->attr.tmpVarId < 4) { // short version!
+      genCode("_",0,0);
+    }
+    else genCode(" ",0,0); // long version
+    genIntCode(e->attr.tmpVarId);
+    genCode("\n",0,0);
+  }
+}
+
+void genStoreVar(const char *varname) {
+  struct SymTableEntry *e = getSymEntry(varname);
+  if (e == NULL) {
+    genCode("  pop ; unknown variable ",0,-1);
+    genCode(varname,0,0);
+    genCode("\n",0,0);
+    return;
+  }
+  if (e->kind == SymbolKind_constant) { // constant
+    genCode("  pop ; cannot store into constant ",0,-1);
+    genCode(varname,0,0);
+    genCode("\n",0,0);
+    return;
+  }
+  else if (e->level == 0) { // global var
+    genCode("  putstatic ",0,-1);
+    genCode(progClassName,0,0);
+    genCode("/",0,0);
+    genCode(varname,0,0);
+    genCode(" ",0,0);
+    genTypeCode(e->type);
+    genCode("\n",0,0);
+  }
+  else { // local var
+    switch (e->type->type) {
+      case Type_BOOLEAN: case Type_INTEGER:
+        genCode("  istore",0,-1); break;
+      case Type_REAL:
+        genCode("  fstore",0,-1); break;
+      default:
+        genCode("  astore",0,-1); break;
+    }
+    if (e->attr.tmpVarId < 4) { // short version!
+      genCode("_",0,0);
+    }
+    else genCode(" ",0,0); // long version
+    genIntCode(e->attr.tmpVarId);
+    genCode("\n",0,0);
+  }
+}
+
+void genLoadArray(struct Expr *expr) {
+  if (expr->type == NULL) {
+    genCode("  iaload ; unknown item type\n",0,-1);
+    return;
+  }
+  switch (expr->type->type) {
+    case Type_BOOLEAN:
+      genCode("  baload\n",0,-1); break;
+    case Type_INTEGER:
+      genCode("  iaload\n",0,-1); break;
+    case Type_REAL:
+      genCode("  faload\n",0,-1); break;
+    default:
+      genCode("  aaload\n",0,-1); break;
+  }
+}
+
+void genStoreArray(struct Expr *expr) {
+  if (expr->type == NULL) {
+    genCode("  iastore ; unknown item type\n",0,-3);
+    return;
+  }
+  switch (expr->type->type) {
+    case Type_BOOLEAN:
+      genCode("  bastore\n",0,-3); break;
+    case Type_INTEGER:
+      genCode("  iastore\n",0,-3); break;
+    case Type_REAL:
+      genCode("  fastore\n",0,-3); break;
+    default:
+      genCode("  aastore\n",0,-3); break;
+  }
+}
+
+void genArrayIndexShift(int offset) {
+  if (offset != 0) {
+    struct Constant c;
+    c.type = Type_INTEGER;
+    c.integer = offset;
+    genConstCode(c);
+    genCode("  isub\n",0,-1);
+  }
+}
+
 struct PatchList *makePatchList(int addr) {
   struct PatchList *lis = malloc(sizeof *lis);
   lis->addr = addr;
