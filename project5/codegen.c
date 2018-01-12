@@ -269,7 +269,8 @@ void genFunctionCall(struct SymTableEntry *fun, const char *funname, struct Patc
           genCodeAt("  i2f\n",p->addr);
       }
       e = e->next;
-      p = p->next;
+      if (p != NULL)
+        p = p->next;
     }
   }
   int argn = 0;

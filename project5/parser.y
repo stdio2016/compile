@@ -151,7 +151,13 @@ function_decl:
       semanticError("function end ID inconsist with the beginning ID\n");
     }
     // append return at end
-    if (funcReturnType->type == Type_VOID)
+    if (funcReturnType->type == Type_INTEGER || funcReturnType->type == Type_BOOLEAN)
+      genCode("  iconst_0\n  ireturn\n",1,0);
+    else if (funcReturnType->type == Type_REAL)
+      genCode("  fconst_0\n  freturn\n",1,0);
+    else if (funcReturnType->type == Type_STRING)
+      genCode("  ldc \"\"\n  areturn\n",1,0);
+    else
       genCode("  return\n",0,0);
     genFunctionEnd();
     free($<pairName>1.name);
@@ -461,6 +467,13 @@ for_stmt:
 return_stmt: RETURN boolean_expr SEMICOLON
   {
     returnCheck(BoolExprToExpr($2), funcReturnType);
+    if ($2.expr->type != NULL) {
+      enum TypeEnum t = $2.expr->type->type;
+      if (t == Type_INTEGER || t == Type_BOOLEAN)
+        genCode("  ireturn\n", 0, -1);
+      else if (t == Type_REAL) genCode("  freturn\n", 0, -1);
+      else if (t == Type_STRING) genCode("  areturn\n", 0, -1);
+    }
     destroyExpr($2.expr);
   }
 ;
