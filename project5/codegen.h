@@ -51,6 +51,8 @@ void genLoadArray(struct Expr *expr);
 void genStoreArray(struct Expr *expr);
 void genArrayIndexShift(int offset);
 
+void genGlobalVarCode(const char *name, struct Type *type);
+
 struct PatchList *makePatchList(int addr);
 void destroyPatchList(struct PatchList *list);
 

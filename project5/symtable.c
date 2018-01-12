@@ -3,6 +3,7 @@
 #include "MyHash.h"
 #include "symtable.h"
 #include "errReport.h"
+#include "codegen.h"
 extern int linenum; // from tokens.l
 
 const char *SymbolKindName[] = {
@@ -208,6 +209,9 @@ static void endVarOrParamDecl(struct Type *type, enum SymbolKind kind) {
         stack[i]->attr.tag = Attribute_LOCALVAR;
         stack[i]->attr.tmpVarId = localVarCount++;
         if (localVarCount > localVarLimit) localVarLimit = localVarCount;
+      }
+      else {
+        genGlobalVarCode(stack[i]->name, stack[i]->type);
       }
     }
   }

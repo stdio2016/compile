@@ -218,8 +218,23 @@ simple_stmt:
   variable_reference ASSIGN boolean_expr SEMICOLON
   {
     assignCheck($1, BoolExprToExpr($3));
-    if ($1->op == Op_VAR) genStoreVar($1->name);
-    else if ($1->op == Op_INDEX) genStoreArray($1);
+    if ($1->op == Op_VAR) {
+      struct SymTableEntry *e = getSymEntry($1->name);
+      if (e != NULL && e->type->type == Type_REAL) { // integer -> real
+        if ($3.expr->type != NULL && $3.expr->type->type == Type_INTEGER) {
+          genCode("  i2f\n",0,0);
+        }
+      }
+      genStoreVar($1->name);
+    }
+    else if ($1->op == Op_INDEX) {
+      if ($1->type != NULL && $1->type->type == Type_REAL) { // integer -> real
+        if ($3.expr->type != NULL && $3.expr->type->type == Type_INTEGER) {
+          genCode("  i2f\n",0,0);
+        }
+      }
+      genStoreArray($1);
+    }
     destroyExpr($1); destroyExpr($3.expr);
   }
 | PRINT

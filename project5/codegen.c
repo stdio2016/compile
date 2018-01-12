@@ -410,6 +410,12 @@ void genArrayIndexShift(int offset) {
   }
 }
 
+void genGlobalVarCode(const char *name, struct Type *type) {
+  fprintf(codeOut, ".field public static %s ", name);
+  genTypeCode(type);
+  fputs("\n", codeOut);
+}
+
 struct PatchList *makePatchList(int addr) {
   struct PatchList *lis = malloc(sizeof *lis);
   lis->addr = addr;

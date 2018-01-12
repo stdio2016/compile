@@ -17,7 +17,7 @@ y.tab.o: y.tab.c symtable.h ast.h errReport.h semcheck.h codegen.h
 lex.yy.o: lex.yy.c y.tab.h ast.h codegen.h symtable.h
 
 MyHash.o: MyHash.c MyHash.h
-symtable.o: symtable.c symtable.h MyHash.h ast.h errReport.h
+symtable.o: symtable.c symtable.h MyHash.h ast.h errReport.h codegen.h
 ast.o: ast.c ast.h
 errReport.o: errReport.c errReport.h
 semcheck.o: semcheck.c semcheck.h symtable.h ast.h errReport.h
