@@ -222,14 +222,30 @@ simple_stmt:
     else if ($1->op == Op_INDEX) genStoreArray($1);
     destroyExpr($1); destroyExpr($3.expr);
   }
-| PRINT boolean_expr SEMICOLON
+| PRINT
+  { genCode("  getstatic java/lang/System/out Ljava/io/PrintStream;\n",1,+1); }
+  boolean_expr SEMICOLON
   {
-    printCheck(BoolExprToExpr($2));
-    destroyExpr($2.expr);
+    printCheck(BoolExprToExpr($3));
+    genCode("  invokevirtual java/io/PrintStream/print(",0,-2);
+    genTypeCode($3.expr->type);
+    genCode(")V\n",0,0);
+    destroyExpr($3.expr);
   }
 | READ variable_reference SEMICOLON
   {
     readCheck($2);
+    genCode("  getstatic ",0,0);
+    genCode(progClassName,0,0);
+    genCode("/_sc Ljava/util/Scanner;\n",1,+1);
+    genCode("  invokevirtual java/util/Scanner/",0,0);
+    if ($2->type == NULL) genCode("nextInt()I\n",0,0); 
+    else if ($2->type->type == Type_BOOLEAN) genCode("nextBoolean()Z\n",0,0);
+    else if ($2->type->type == Type_REAL) genCode("nextFloat()F\n",0,0);
+    else if ($2->type->type == Type_INTEGER) genCode("nextInt()I\n",0,0);
+    else if ($2->type->type == Type_STRING) genCode("next()Ljava/lang/String;\n",0,0);
+    if ($2->op == Op_VAR) genStoreVar($2->name);
+    else if ($2->op == Op_INDEX) genStoreArray($2);
     destroyExpr($2);
   }
 ;
