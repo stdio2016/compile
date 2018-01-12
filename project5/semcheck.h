@@ -37,6 +37,6 @@ void relOpCheck(struct Expr *expr);
 void unaryOpCheck(struct Expr *expr);
 
 // check function call
-void functionCheck(struct Expr *expr);
+void functionCheck(struct Expr *expr, struct SymTableEntry *fun);
 
 #endif

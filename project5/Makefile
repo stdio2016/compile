@@ -14,7 +14,7 @@ y.tab.c y.tab.h: parser.y
 lex.yy.c: tokens.l
 	$(LEX) $<
 y.tab.o: y.tab.c symtable.h ast.h errReport.h semcheck.h codegen.h
-lex.yy.o: lex.yy.c y.tab.h ast.h codegen.h
+lex.yy.o: lex.yy.c y.tab.h ast.h codegen.h symtable.h
 
 MyHash.o: MyHash.c MyHash.h
 symtable.o: symtable.c symtable.h MyHash.h ast.h errReport.h

@@ -56,4 +56,5 @@ void destroyAttribute(struct Attribute *attr);
 void showAttribute(struct Attribute attr);
 
 struct SymTableEntry *getSymEntry(const char *name);
+struct SymTableEntry *getFunctionEntry(const char *funname);
 #endif

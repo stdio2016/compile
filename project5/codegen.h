@@ -2,6 +2,7 @@
 #ifndef CODEGEN_INCLUDED
 #define CODEGEN_INCLUDED
 #include "ast.h"
+#include "symtable.h"
 
 // called at start
 void initCodeGen(const char *filename);
@@ -34,7 +35,7 @@ void genIntCode(int num);
 // output type
 void genTypeCode(struct Type *type);
 // output function name and type
-void genFuncTypeCode(const char *funname);
+void genFuncTypeCode(struct SymTableEntry *e, const char *funname);
 // output constant
 void genConstCode(struct Constant val);
 
@@ -42,7 +43,7 @@ void genConstCode(struct Constant val);
 void genFunctionStart(const char *funname);
 void genProgMain(void);
 void genFunctionEnd();
-
+void genFunctionCall(struct SymTableEntry *e, const char *funname, struct PatchList *list, struct Expr *args);
 
 struct PatchList *makePatchList(int addr);
 void destroyPatchList(struct PatchList *list);

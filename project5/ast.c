@@ -230,6 +230,7 @@ void showExpr(struct Expr *expr, int depth) {
 
 void initExprList(struct ExprList *list) {
   list->first = list->last = NULL;
+  list->marks = NULL;
 }
 
 void addToExprList(struct ExprList *list, struct Expr *expr) {

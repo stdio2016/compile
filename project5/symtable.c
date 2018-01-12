@@ -317,3 +317,15 @@ void showAttribute(struct Attribute attr) {
 struct SymTableEntry *getSymEntry(const char *name) {
   return MyHash_get(&table, name);
 }
+
+struct SymTableEntry *getFunctionEntry(const char *funname) {
+  struct SymTableEntry *a = getSymEntry(funname);
+  // find a function symbol
+  if (a == NULL) {
+    return NULL;
+  }
+  while (a->kind != SymbolKind_function && a->prev != NULL) {
+    a = a->prev;
+  }
+  return a;
+}

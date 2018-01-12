@@ -261,7 +261,7 @@ factor:
   {
     $$ = ExprToBoolExpr(createExpr(Op_UMINUS, BoolExprToExpr($2), NULL));
     unaryOpCheck($$.expr);
-    Bool isFloat = $$.expr->type->type == Type_REAL;
+    Bool isFloat = $$.expr->type != NULL && $$.expr->type->type == Type_REAL;
     genCode(isFloat ? "  fneg\n" : "  ineg\n", 0, 0);
   }
 ;
@@ -275,7 +275,7 @@ term:
       modOpCheck($$.expr);
     else
       arithOpCheck($$.expr);
-    Bool isFloat = $$.expr->type->type == Type_REAL;
+    Bool isFloat = $$.expr->type != NULL && $$.expr->type->type == Type_REAL;
     if (isFloat) {
       if ($1.expr->type->type == Type_INTEGER) genCodeAt("  i2f\n", $3);
       if ($4.expr->type->type == Type_INTEGER) genCode("  i2f\n",0,0);
@@ -303,13 +303,13 @@ expression:
   {
     $$ = createBoolExpr($2, $1, $4);
     arithOpCheck($$.expr);
-    Bool isFloat = $$.expr->type->type == Type_REAL;
+    Bool isFloat = $$.expr->type != NULL && $$.expr->type->type == Type_REAL;
     if (isFloat) {
       if ($1.expr->type->type == Type_INTEGER) genCodeAt("  i2f\n", $3);
       if ($4.expr->type->type == Type_INTEGER) genCode("  i2f\n",0,0);
     }
     if ($2 == Op_PLUS) {
-      if ($$.expr->type->type == Type_STRING) { // concat string
+      if ($$.expr->type != NULL && $$.expr->type->type == Type_STRING) { // concat string
         genCode("  invokevirtual java/lang/String/concat(Ljava/lang/String;)Ljava/lang/String;\n", 0, -1);
       }
       else genCode(isFloat ? "  fadd\n" : "  iadd\n", 0, -1);
@@ -330,8 +330,8 @@ relation_expr:
     //TODO relop
     $$ = createBoolExpr($2, $1, $4);
     relOpCheck($$.expr);
-    int real1 = $1.expr->type->type == Type_REAL;
-    int real2 = $4.expr->type->type == Type_REAL;
+    int real1 = $$.expr->type != NULL && $1.expr->type->type == Type_REAL;
+    int real2 = $$.expr->type != NULL && $4.expr->type->type == Type_REAL;
     if (real1 || real2) {
       if (real1) genCode("  i2f\n",0,0);
       if (real2) genCodeAt("  i2f\n",$3);
@@ -391,8 +391,13 @@ boolean_expr:
 function_invoc: identifier LPAREN arg_list RPAREN
   {
     $$ = createFuncExpr($1, $3.first);
-    functionCheck($$);
+    struct SymTableEntry *fun = getFunctionEntry($1);
+    functionCheck($$, fun);
     // TODO function call/coerce
+    struct Expr *e = $3.first;
+    struct PatchList *p = $3.marks;
+    genFunctionCall(fun, $1, p, e);
+    destroyPatchList($3.marks);
   }
 ;
 
@@ -460,7 +465,13 @@ return_stmt: RETURN boolean_expr SEMICOLON
   }
 ;
 
-procedure_call: function_invoc SEMICOLON { destroyExpr($1); }
+procedure_call: function_invoc SEMICOLON
+  {
+    if ($1->type != NULL && $1->type->type != Type_VOID) {
+      genCode("  pop\n", 0, -1);
+    }
+    destroyExpr($1);
+  }
 ;
 
 literal_constant:

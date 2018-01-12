@@ -93,7 +93,7 @@ int genInsertPoint() {
   labelCount++;
   if (labelCount >= codeArraySize) {
     if (labelCount >= codeArrayCap) {
-      codeArray = realloc(codeArray, codeArrayCap*2);
+      codeArray = realloc(codeArray, sizeof(codeArray[0]) * codeArrayCap*2);
       if (codeArray == NULL) exit(-1); // out of memory!
       codeArrayCap *= 2;
     }
@@ -144,9 +144,9 @@ void genTypeCode(struct Type *type) {
   }
 }
 
-void genFuncTypeCode(const char *funname) {
-  genCode(funname, 0, 0);
-  struct SymTableEntry *e = getSymEntry(funname);
+void genFuncTypeCode(struct SymTableEntry *e, const char *funname) {
+  // don't generate "main" for function main
+  genCode(strcmp(funname, "main") ? funname : "_main", 0, 0);
   if (e == NULL || e->kind != SymbolKind_function) return;
   genCode("(", 0, 0);
   int n = e->attr.argType.arity, i;
@@ -155,17 +155,6 @@ void genFuncTypeCode(const char *funname) {
   }
   genCode(")", 0, 0);
   genTypeCode(e->type);
-}
-
-void genFunctionStart(const char *funname) {
-  labelCount = 0;
-  stackLimit = 0;
-  virtStackPos = 0;
-  fprintf(codeOut, ".method public static ");
-  genFuncTypeCode(funname);
-  fputs("\n", codeOut);
-  inFunction = True;
-  StrBuf_clear(&codeArray[0]);
 }
 
 void genConstCode(struct Constant val) {
@@ -225,6 +214,17 @@ void genConstCode(struct Constant val) {
   }
 }
 
+void genFunctionStart(const char *funname) {
+  labelCount = 0;
+  stackLimit = 0;
+  virtStackPos = 0;
+  fprintf(codeOut, ".method public static ");
+  genFuncTypeCode(getFunctionEntry(funname), funname);
+  fputs("\n", codeOut);
+  inFunction = True;
+  StrBuf_clear(&codeArray[0]);
+}
+
 void genProgMain() {
   labelCount = 0;
   stackLimit = 0;
@@ -252,7 +252,38 @@ void genFunctionEnd() {
   for (i = 1; i <= labelCount; i++) {
     fputs(codeArray[i].buf, codeOut);
   }
-  fputs(".end method\n", codeOut);
+  fputs(".end method\n\n", codeOut);
+}
+
+void genFunctionCall(struct SymTableEntry *fun, const char *funname, struct PatchList *p, struct Expr *args) {
+  if (fun != NULL) {
+    int i, n = fun->attr.argType.arity;
+    struct Expr *e = args;
+    for (i = 0; i < n; i++) {
+      if (e == NULL) break;
+      if (fun->attr.argType.types[i]->type == Type_REAL
+        && e->type != NULL && e->type->type == Type_INTEGER) {
+        if (e->next == NULL)
+          genCode("  i2f\n",0,0);
+        else
+          genCodeAt("  i2f\n",p->addr);
+      }
+      e = e->next;
+      p = p->next;
+    }
+  }
+  int argn = 0;
+  struct Expr *e = args;
+  while (e != NULL) {
+    argn++;
+    e = e->next;
+  }
+  genCode("  invokestatic ", 0, -argn);
+  genCode(progClassName, 0, 0);
+  genCode("/",0,0);
+  genFuncTypeCode(fun, funname);
+  int n = fun != NULL && fun->kind == SymbolKind_function && fun->type->type != Type_VOID;
+  genCode("\n", n, +n);
 }
 
 struct PatchList *makePatchList(int addr) {
@@ -265,11 +296,11 @@ struct PatchList *makePatchList(int addr) {
 void destroyPatchList(struct PatchList *list) {
   if (list == NULL) return;
   struct PatchList *p = list;
-  while (p != list) {
+  do {
     struct PatchList *q = p->next;
     free(p);
     p = q;
-  }
+  } while (p != list);
 }
 
 void backpatch(struct PatchList *list, int label) {
