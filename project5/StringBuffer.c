@@ -7,6 +7,7 @@ void StrBuf_init(struct StringBuffer *sb) {
   sb->size = 0;
   sb->capacity = BASE_CAPACITY;
   sb->buf = malloc(sb->capacity);
+  sb->buf[0] = '\0';
 }
 
 void StrBuf_append(struct StringBuffer *sb, const char *str) {
