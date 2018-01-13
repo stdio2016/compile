@@ -209,6 +209,9 @@ static void endVarOrParamDecl(struct Type *type, enum SymbolKind kind) {
         stack[i]->attr.tag = Attribute_LOCALVAR;
         stack[i]->attr.tmpVarId = localVarCount++;
         if (localVarCount > localVarLimit) localVarLimit = localVarCount;
+        if (kind == SymbolKind_variable) {
+          genLocalVarInit(stack[i]->attr.tmpVarId, stack[i]->type);
+        }
       }
       else {
         genGlobalVarCode(stack[i]->name, stack[i]->type);

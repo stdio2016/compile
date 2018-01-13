@@ -445,6 +445,16 @@ void genGlobalVarInit(const char *name, struct Type *type) {
   // integer, real and boolean doesn't need init
 }
 
+void genLocalVarInit(int tmpVarId, struct Type *type) {
+  if (type->type == Type_INTEGER || type->type == Type_BOOLEAN) genCode("  iconst_0\n",1,+1);
+  else if (type->type == Type_REAL) genCode("  fconst_0\n",1,+1);
+  else if (type->type == Type_STRING) genCode("  ldc \"\"\n",1,+1);
+  else if (type->type == Type_ARRAY) {
+    //TODO genCreateArray(type);
+  }
+  genStoreLocalVar(tmpVarId, type->type);
+}
+
 struct PatchList *makePatchList(int addr) {
   struct PatchList *lis = malloc(sizeof *lis);
   lis->addr = addr;
