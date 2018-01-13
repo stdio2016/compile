@@ -73,7 +73,7 @@ struct Type *funcReturnType = NULL;
 %type<boolExpr> minus_expr factor term expression relation_expr boolean_factor boolean_term boolean_expr
 %type<op> mul_op plus_op relop
 %type<args> arg_list arguments
-%type<label> Mark
+%type<label> Mark Label
 %%
 
 program		: programname SEMICOLON
@@ -321,17 +321,18 @@ factor:
 
 term:
   factor
-| term mul_op Mark factor
+| term mul_op { BoolExprToExpr($1); } Mark factor
   {
-    $$ = createBoolExpr($2, $1, $4);
+    BoolExprToExpr($5);
+    $$ = createBoolExpr($2, $1, $5);
     if ($2 == Op_MOD)
       modOpCheck($$.expr);
     else
       arithOpCheck($$.expr);
     Bool isFloat = $$.expr->type != NULL && $$.expr->type->type == Type_REAL;
     if (isFloat) {
-      if ($1.expr->type->type == Type_INTEGER) genCodeAt("  i2f\n", $3);
-      if ($4.expr->type->type == Type_INTEGER) genCode("  i2f\n",0,0);
+      if ($1.expr->type->type == Type_INTEGER) genCodeAt("  i2f\n", $4);
+      if ($5.expr->type->type == Type_INTEGER) genCode("  i2f\n",0,0);
     }
     if ($2 == Op_MULTIPLY) genCode(isFloat ? "  fmul\n" : "  imul\n", 0, -1);
     else if ($2 == Op_DIVIDE) genCode(isFloat ? "  fdiv\n" : "  idiv\n", 0, -1);
@@ -341,7 +342,7 @@ term:
 ;
 
 Mark: {
-  $$ = genInsertPoint()-1;
+  $$ = genInsertPoint();
 };
 
 mul_op:
@@ -352,14 +353,15 @@ mul_op:
 
 expression:
   term
-| expression plus_op Mark term
+| expression plus_op { BoolExprToExpr($1); } Mark term
   {
-    $$ = createBoolExpr($2, $1, $4);
+    BoolExprToExpr($5);
+    $$ = createBoolExpr($2, $1, $5);
     arithOpCheck($$.expr);
     Bool isFloat = $$.expr->type != NULL && $$.expr->type->type == Type_REAL;
     if (isFloat) {
-      if ($1.expr->type->type == Type_INTEGER) genCodeAt("  i2f\n", $3);
-      if ($4.expr->type->type == Type_INTEGER) genCode("  i2f\n",0,0);
+      if ($1.expr->type->type == Type_INTEGER) genCodeAt("  i2f\n", $4);
+      if ($5.expr->type->type == Type_INTEGER) genCode("  i2f\n",0,0);
     }
     if ($2 == Op_PLUS) {
       if ($$.expr->type != NULL && $$.expr->type->type == Type_STRING) { // concat string
@@ -378,20 +380,31 @@ plus_op:
 
 relation_expr:
   expression
-| relation_expr relop Mark expression
+| relation_expr relop { BoolExprToExpr($1); } Mark expression
   {
-    //TODO relop
-    $$ = createBoolExpr($2, $1, $4);
+    //TODO relop for float
+    BoolExprToExpr($5);
+    $$ = createBoolExpr($2, $1, $5);
     relOpCheck($$.expr);
     int real1 = $$.expr->type != NULL && $1.expr->type->type == Type_REAL;
-    int real2 = $$.expr->type != NULL && $4.expr->type->type == Type_REAL;
-    if (real1 || real2) {
+    int real2 = $$.expr->type != NULL && $5.expr->type->type == Type_REAL;
+    Bool f = real1 || real2;
+    if (f) {
       if (real1) genCode("  i2f\n",0,0);
-      if (real2) genCodeAt("  i2f\n",$3);
+      if (real2) genCodeAt("  i2f\n",$4);
     }
-    else {
+    switch ($2) {
+      case Op_LESS: genCode(f?"":"  if_icmplt ",0,-2); break;
+      case Op_LEQUAL: genCode(f?"":"  if_icmple ",0,-2); break;
+      case Op_EQUAL: genCode(f?"":"  if_icmpeq ",0,-2); break;
+      case Op_GEQUAL: genCode(f?"":"  if_icmpge ",0,-2); break;
+      case Op_GREATER: genCode(f?"":"  if_icmpgt ",0,-2); break;
+      case Op_NOTEQUAL: genCode(f?"":"  if_icmpne ",0,-2); break;
     }
     $$.isTFlist = True;
+    $$.truelist = makePatchList(genInsertPoint());
+    genCode("  goto ",0,0);
+    $$.falselist = makePatchList(genLabel());
   }
 ;
 
@@ -413,31 +426,64 @@ boolean_factor:
     unaryOpCheck($$.expr);
     $$.isTFlist = $2.isTFlist;
     if ($2.isTFlist) {
+      $$.truelist = $2.falselist;
+      $$.falselist = $2.truelist;
     }
     else {
+      genCode("  iconst_1\n  ixor\n",1,0);
     }
   }
 ;
 
+Label: {
+  $$ = genLabel();
+};
+
 boolean_term:
   boolean_factor
-| boolean_term AND boolean_factor
+| boolean_term AND Label boolean_factor
   {
-    //TODO and
-    $$ = ExprToBoolExpr(createExpr(Op_AND, $1.expr, $3.expr));
+    $$ = ExprToBoolExpr(createExpr(Op_AND, $1.expr, $4.expr));
     boolOpCheck($$.expr);
-    $$.isTFlist = True;
+    $$.isTFlist = $1.isTFlist | $4.isTFlist;
+    if ($$.isTFlist) {
+      if (!$1.isTFlist) {
+        genCodeAt("  ifeq ", $3);
+        $1.falselist = makePatchList($3);
+        $1.truelist = NULL;
+      }
+      if (!$4.isTFlist) {
+        BoolExpr_toTFlist(&$4);
+      }
+      backpatch($1.truelist, $3);
+      $$.falselist = mergePatchList($1.falselist, $4.falselist);
+      $$.truelist = $4.truelist;
+    }
+    else genCode("  iand\n",0,-1);
   }
 ;
 
 boolean_expr:
   boolean_term
-| boolean_expr OR boolean_term
+| boolean_expr OR Label boolean_term
   {
-    //TODO or
-    $$ = ExprToBoolExpr(createExpr(Op_OR, $1.expr, $3.expr));
+    $$ = ExprToBoolExpr(createExpr(Op_OR, $1.expr, $4.expr));
     boolOpCheck($$.expr);
-    $$.isTFlist = True;
+    $$.isTFlist = $1.isTFlist | $4.isTFlist;
+    if ($$.isTFlist) {
+      if (!$1.isTFlist) {
+        genCodeAt("  ifne ", $3);
+        $1.truelist = makePatchList($3);
+        $1.falselist = NULL;
+      }
+      if (!$4.isTFlist) {
+        BoolExpr_toTFlist(&$4);
+      }
+      backpatch($1.falselist, $3);
+      $$.truelist = mergePatchList($1.truelist, $4.truelist);
+      $$.falselist = $4.falselist;
+    }
+    else genCode("  ior\n",0,-1);
   }
 ;
 
@@ -446,7 +492,6 @@ function_invoc: identifier LPAREN arg_list RPAREN
     $$ = createFuncExpr($1, $3.first);
     struct SymTableEntry *fun = getFunctionEntry($1);
     functionCheck($$, fun);
-    // TODO function call/coerce
     struct Expr *e = $3.first;
     struct PatchList *p = $3.marks;
     genFunctionCall(fun, $1, p, e);

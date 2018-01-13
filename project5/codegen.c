@@ -9,8 +9,13 @@ char *asmName;
 FILE *codeOut;
 extern char *progClassName; // defined in parser.y
 
+struct LabeledStringBuffer {
+  struct StringBuffer buf;
+  Bool hasLabel;
+};
+
 // generator state
-static struct StringBuffer *codeArray;
+static struct LabeledStringBuffer *codeArray;
 static int codeArraySize, codeArrayCap, labelCount;
 int stackLimit, virtStackPos;
 static Bool inFunction = False;
@@ -31,8 +36,9 @@ void initCodeGen(const char *filename) {
   codeOut = fopen(asmName, "w");
   codeArrayCap = 5;
   codeArraySize = 1;
-  codeArray = malloc(sizeof(struct StringBuffer) * codeArrayCap);
-  StrBuf_init(&codeArray[0]);
+  codeArray = malloc(sizeof(*codeArray) * codeArrayCap);
+  codeArray[0].hasLabel = False;
+  StrBuf_init(&codeArray[0].buf);
   inFunction = False;
 }
 
@@ -46,7 +52,7 @@ void genProgStart() {
 void endCodeGen() {
   int i;
   for (i = 0; i < codeArraySize; i++) {
-    StrBuf_destroy(&codeArray[i]);
+    StrBuf_destroy(&codeArray[i].buf);
   }
   free(codeArray);
   fclose(codeOut);
@@ -56,7 +62,7 @@ void endCodeGen() {
 struct BoolExpr createBoolExpr(enum Operator op, struct BoolExpr op1, struct BoolExpr op2) {
   struct BoolExpr b;
   b.isTFlist = False;
-  b.expr = createExpr(op, BoolExprToExpr(op1), BoolExprToExpr(op2));
+  b.expr = createExpr(op, op1.expr, op2.expr);
   return b;
 }
 
@@ -76,16 +82,26 @@ struct BoolExpr ExprToBoolExpr(struct Expr *expr) {
 
 // BoolExpr has two types: immed and tflist
 void BoolExpr_toTFlist(struct BoolExpr *expr) {
+  genCode("  if_ne ",0,-1);
+  expr->truelist = makePatchList(genInsertPoint());
+  genCode("  goto ",0,0);
+  expr->falselist = makePatchList(genLabel());
 }
 
 void BoolExpr_toImmed(struct BoolExpr *expr) {
+  expr->isTFlist = False;
+  genCode("  iconst_1\n",1,+1);
+  genCode("  goto ",0,0);
+  int i = genLabel();
+  struct PatchList *p = makePatchList(i);
+  backpatch(expr->truelist, i);
+  genCode("  iconst_0\n",1,+1);
+  backpatch(expr->falselist, genLabel());
+  backpatch(p, labelCount);
 }
 
 int genLabel() {
   int lbl = genInsertPoint();
-  genCode("Label",0,0);
-  genIntCode(lbl+1);
-  genCode(":\n",0,0);
   return lbl;
 }
 
@@ -97,18 +113,19 @@ int genInsertPoint() {
       if (codeArray == NULL) exit(-1); // out of memory!
       codeArrayCap *= 2;
     }
-    StrBuf_init(&codeArray[labelCount]);
+    StrBuf_init(&codeArray[labelCount].buf);
     codeArraySize++;
   }
   else {
-    StrBuf_clear(&codeArray[labelCount]);
+    StrBuf_clear(&codeArray[labelCount].buf);
   }
-  return labelCount;
+  codeArray[labelCount].hasLabel = False;
+  return labelCount-1;
 }
 
 void genCode(const char *code, int useStack, int stackUpDown) {
   if (inFunction) {
-    StrBuf_append(&codeArray[labelCount], code);
+    StrBuf_append(&codeArray[labelCount].buf, code);
     if (virtStackPos + useStack > stackLimit) {
       stackLimit = virtStackPos + useStack;
     }
@@ -120,7 +137,7 @@ void genCode(const char *code, int useStack, int stackUpDown) {
 }
 
 void genCodeAt(const char *code, int addr) {
-  StrBuf_append(&codeArray[addr], code);
+  StrBuf_append(&codeArray[addr].buf, code);
 }
 
 void genIntCode(int num) {
@@ -222,7 +239,8 @@ void genFunctionStart(const char *funname) {
   genFuncTypeCode(getFunctionEntry(funname), funname);
   fputs("\n", codeOut);
   inFunction = True;
-  StrBuf_clear(&codeArray[0]);
+  StrBuf_clear(&codeArray[0].buf);
+  codeArray[0].hasLabel = False;
 }
 
 void genProgMain() {
@@ -231,7 +249,8 @@ void genProgMain() {
   virtStackPos = 0;
   fputs(".method public static main([Ljava/lang/String;)V\n", codeOut);
   inFunction = True;
-  StrBuf_clear(&codeArray[0]);
+  StrBuf_clear(&codeArray[0].buf);
+  codeArray[0].hasLabel = False;
   localVarCount = localVarLimit = 1; // because the first temp var is argument of main
   genCode("  new java/util/Scanner\n", 1, +1);
   genCode("  dup\n", 1, +1);
@@ -254,9 +273,10 @@ void genFunctionEnd() {
   int i;
   fprintf(codeOut, ".limit stack %d\n", stackLimit);
   fprintf(codeOut, ".limit locals %ld\n", localVarLimit);
-  fputs(codeArray[0].buf, codeOut);
+  fputs(codeArray[0].buf.buf, codeOut);
   for (i = 1; i <= labelCount; i++) {
-    fputs(codeArray[i].buf, codeOut);
+    if (codeArray[i].hasLabel) fprintf(codeOut, "Label%d:\n",i);
+    fputs(codeArray[i].buf.buf, codeOut);
   }
   fputs(".end method\n\n", codeOut);
 }
@@ -473,7 +493,17 @@ void destroyPatchList(struct PatchList *list) {
 }
 
 void backpatch(struct PatchList *list, int label) {
-  // TODO
+  if (list == NULL) return;
+  struct PatchList *p = list;
+  do {
+    char buf[25];
+    sprintf(buf, "Label%d\n", label);
+    genCodeAt(buf, p->addr);
+    struct PatchList *q = p->next;
+    free(p);
+    p = q;
+  } while (p != list);
+  codeArray[label].hasLabel = True;
 }
 
 struct PatchList *mergePatchList(struct PatchList *p1, struct PatchList *p2) {
