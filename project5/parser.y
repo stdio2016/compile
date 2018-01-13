@@ -382,7 +382,6 @@ relation_expr:
   expression
 | relation_expr relop { BoolExprToExpr($1); } Mark expression
   {
-    //TODO relop for float
     BoolExprToExpr($5);
     $$ = createBoolExpr($2, $1, $5);
     relOpCheck($$.expr);
@@ -390,16 +389,16 @@ relation_expr:
     int real2 = $$.expr->type != NULL && $5.expr->type->type == Type_REAL;
     Bool f = real1 || real2;
     if (f) {
-      if (real1) genCode("  i2f\n",0,0);
-      if (real2) genCodeAt("  i2f\n",$4);
+      if (!real1) genCode("  i2f\n",0,0);
+      if (!real2) genCodeAt("  i2f\n",$4);
     }
     switch ($2) {
-      case Op_LESS: genCode(f?"":"  if_icmplt ",0,-2); break;
-      case Op_LEQUAL: genCode(f?"":"  if_icmple ",0,-2); break;
-      case Op_EQUAL: genCode(f?"":"  if_icmpeq ",0,-2); break;
-      case Op_GEQUAL: genCode(f?"":"  if_icmpge ",0,-2); break;
-      case Op_GREATER: genCode(f?"":"  if_icmpgt ",0,-2); break;
-      case Op_NOTEQUAL: genCode(f?"":"  if_icmpne ",0,-2); break;
+      case Op_LESS: genCode(f?"  fcmpg\n  iflt ":"  if_icmplt ",0,-2); break;
+      case Op_LEQUAL: genCode(f?"  fcmpg\n  ifle ":"  if_icmple ",0,-2); break;
+      case Op_EQUAL: genCode(f?"  fcmpl\n  ifeq ":"  if_icmpeq ",0,-2); break;
+      case Op_GEQUAL: genCode(f?"  fcmpl\n  ifge ":"  if_icmpge ",0,-2); break;
+      case Op_GREATER: genCode(f?"  fcmpl\n  ifgt ":"  if_icmpgt ",0,-2); break;
+      case Op_NOTEQUAL: genCode(f?"  fcmpl\n  ifne ":"  if_icmpne ",0,-2); break;
     }
     $$.isTFlist = True;
     $$.truelist = makePatchList(genInsertPoint());
