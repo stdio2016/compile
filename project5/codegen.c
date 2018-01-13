@@ -240,7 +240,13 @@ void genProgMain() {
   genCode("  putstatic ", 0, 0);
   genCode(progClassName, 0, 0);
   genCode("/_sc Ljava/util/Scanner;\n", 0, -1);
-  //TODO generate global var initialize
+  int i;
+  extern int stackTop; // defined in symtable.c
+  extern struct SymTableEntry **stack;
+  for (i = 0; i < stackTop; i++) {
+    if (stack[i]->kind == SymbolKind_variable)
+      genGlobalVarInit(stack[i]->name, stack[i]->type);
+  }
 }
 
 void genFunctionEnd() {
@@ -287,6 +293,40 @@ void genFunctionCall(struct SymTableEntry *fun, const char *funname, struct Patc
   genCode("\n", n, +n);
 }
 
+void genLoadLocalVar(int tmpVarId, enum TypeEnum type) {
+  switch (type) {
+    case Type_BOOLEAN: case Type_INTEGER:
+      genCode("  iload",1,+1); break;
+    case Type_REAL:
+      genCode("  fload",1,+1); break;
+    default:
+      genCode("  aload",1,+1); break;
+  }
+  if (tmpVarId < 4) { // short version!
+    genCode("_",0,0);
+  }
+  else genCode(" ",0,0); // long version
+  genIntCode(tmpVarId);
+  genCode("\n",0,0);
+}
+
+void genStoreLocalVar(int tmpVarId, enum TypeEnum type) {
+  switch (type) {
+    case Type_BOOLEAN: case Type_INTEGER:
+      genCode("  istore",0,-1); break;
+    case Type_REAL:
+      genCode("  fstore",0,-1); break;
+    default:
+      genCode("  astore",0,-1); break;
+  }
+  if (tmpVarId < 4) { // short version!
+    genCode("_",0,0);
+  }
+  else genCode(" ",0,0); // long version
+  genIntCode(tmpVarId);
+  genCode("\n",0,0);
+}
+
 void genLoadVar(const char *varname) {
   struct SymTableEntry *e = getSymEntry(varname);
   if (e == NULL) {
@@ -308,20 +348,7 @@ void genLoadVar(const char *varname) {
     genCode("\n",0,0);
   }
   else { // local var
-    switch (e->type->type) {
-      case Type_BOOLEAN: case Type_INTEGER:
-        genCode("  iload",1,+1); break;
-      case Type_REAL:
-        genCode("  fload",1,+1); break;
-      default:
-        genCode("  aload",1,+1); break;
-    }
-    if (e->attr.tmpVarId < 4) { // short version!
-      genCode("_",0,0);
-    }
-    else genCode(" ",0,0); // long version
-    genIntCode(e->attr.tmpVarId);
-    genCode("\n",0,0);
+    genLoadLocalVar(e->attr.tmpVarId, e->type->type);
   }
 }
 
@@ -349,20 +376,7 @@ void genStoreVar(const char *varname) {
     genCode("\n",0,0);
   }
   else { // local var
-    switch (e->type->type) {
-      case Type_BOOLEAN: case Type_INTEGER:
-        genCode("  istore",0,-1); break;
-      case Type_REAL:
-        genCode("  fstore",0,-1); break;
-      default:
-        genCode("  astore",0,-1); break;
-    }
-    if (e->attr.tmpVarId < 4) { // short version!
-      genCode("_",0,0);
-    }
-    else genCode(" ",0,0); // long version
-    genIntCode(e->attr.tmpVarId);
-    genCode("\n",0,0);
+    genStoreLocalVar(e->attr.tmpVarId, e->type->type);
   }
 }
 
@@ -414,6 +428,21 @@ void genGlobalVarCode(const char *name, struct Type *type) {
   fprintf(codeOut, ".field public static %s ", name);
   genTypeCode(type);
   fputs("\n", codeOut);
+}
+
+void genGlobalVarInit(const char *name, struct Type *type) {
+  if (type->type == Type_STRING) {
+    genCode("  ldc \"\"\n",1,+1);
+    genCode("  putstatic ",0,-1);
+    genCode(progClassName,0,0);
+    genCode("/",0,0);
+    genCode(name,0,0);
+    genCode(" Ljava/lang/String;\n",0,0);
+  }
+  else if (type->type == Type_ARRAY) {
+    //TODO genCreateArray(type);
+  }
+  // integer, real and boolean doesn't need init
 }
 
 struct PatchList *makePatchList(int addr) {
