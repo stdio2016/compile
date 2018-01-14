@@ -82,7 +82,7 @@ struct BoolExpr ExprToBoolExpr(struct Expr *expr) {
 
 // BoolExpr has two types: immed and tflist
 void BoolExpr_toTFlist(struct BoolExpr *expr) {
-  genCode("  if_ne ",0,-1);
+  genCode("  ifne ",0,-1);
   expr->truelist = makePatchList(genInsertPoint());
   genCode("  goto ",0,0);
   expr->falselist = makePatchList(genLabel());
@@ -95,7 +95,7 @@ void BoolExpr_toImmed(struct BoolExpr *expr) {
   int i = genLabel();
   struct PatchList *p = makePatchList(i);
   backpatch(expr->truelist, i);
-  genCode("  iconst_0\n",1,+1);
+  genCode("  iconst_0\n",1,0);
   backpatch(expr->falselist, genLabel());
   backpatch(p, labelCount);
 }

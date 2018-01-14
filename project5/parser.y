@@ -444,21 +444,19 @@ boolean_term:
   {
     $$ = ExprToBoolExpr(createExpr(Op_AND, $1.expr, $4.expr));
     boolOpCheck($$.expr);
-    $$.isTFlist = $1.isTFlist | $4.isTFlist;
-    if ($$.isTFlist) {
-      if (!$1.isTFlist) {
-        genCodeAt("  ifeq ", $3);
-        $1.falselist = makePatchList($3);
-        $1.truelist = NULL;
-      }
-      if (!$4.isTFlist) {
-        BoolExpr_toTFlist(&$4);
-      }
-      backpatch($1.truelist, $3);
-      $$.falselist = mergePatchList($1.falselist, $4.falselist);
-      $$.truelist = $4.truelist;
+    $$.isTFlist = True;
+    if (!$1.isTFlist) {
+      genCodeAt("  ifeq ", $3);
+      $1.falselist = makePatchList($3);
+      $1.truelist = NULL;
+      genCode("",0,-1); // move stack pointer back
     }
-    else genCode("  iand\n",0,-1);
+    if (!$4.isTFlist) {
+      BoolExpr_toTFlist(&$4);
+    }
+    backpatch($1.truelist, $3);
+    $$.falselist = mergePatchList($1.falselist, $4.falselist);
+    $$.truelist = $4.truelist;
   }
 ;
 
@@ -468,21 +466,19 @@ boolean_expr:
   {
     $$ = ExprToBoolExpr(createExpr(Op_OR, $1.expr, $4.expr));
     boolOpCheck($$.expr);
-    $$.isTFlist = $1.isTFlist | $4.isTFlist;
-    if ($$.isTFlist) {
-      if (!$1.isTFlist) {
-        genCodeAt("  ifne ", $3);
-        $1.truelist = makePatchList($3);
-        $1.falselist = NULL;
-      }
-      if (!$4.isTFlist) {
-        BoolExpr_toTFlist(&$4);
-      }
-      backpatch($1.falselist, $3);
-      $$.truelist = mergePatchList($1.truelist, $4.truelist);
-      $$.falselist = $4.falselist;
+    $$.isTFlist = True;
+    if (!$1.isTFlist) {
+      genCodeAt("  ifne ", $3);
+      $1.truelist = makePatchList($3);
+      $1.falselist = NULL;
+      genCode("",0,-1);// move stack pointer back
     }
-    else genCode("  ior\n",0,-1);
+    if (!$4.isTFlist) {
+      BoolExpr_toTFlist(&$4);
+    }
+    backpatch($1.falselist, $3);
+    $$.truelist = mergePatchList($1.truelist, $4.truelist);
+    $$.falselist = $4.falselist;
   }
 ;
 
