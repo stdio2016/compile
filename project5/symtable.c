@@ -102,7 +102,7 @@ struct PairName addSymbol(char *name, enum SymbolKind kind) {
   return out;
 }
 
-Bool addLoopVar(char *name) {
+int addLoopVar(char *name) {
   // add a loop var symbol in higher level scope
   curScopeLevel++;
   Bool y = addSymbol(name, SymbolKind_loopVar).success;
@@ -112,8 +112,9 @@ Bool addLoopVar(char *name) {
     stack[stackTop-1]->attr.tag = Attribute_LOCALVAR;
     stack[stackTop-1]->attr.tmpVarId = localVarCount++;
     if (localVarCount > localVarLimit) localVarLimit = localVarCount;
+    return localVarCount;
   }
-  return y;
+  return 0;
 }
 
 void removeLoopVar(void) {

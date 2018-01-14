@@ -591,11 +591,29 @@ while_stmt:
 ;
 
 for_stmt:
-  FOR identifier { $<boolVal>$ = addLoopVar($2); } ASSIGN integer_constant TO integer_constant
-  { forCheck($5.integer, $7.integer); }
-  DO
+  FOR identifier { $<label>$ = addLoopVar($2); } ASSIGN integer_constant TO integer_constant
+  {
+    forCheck($5.integer, $7.integer);
+    genConstCode($5);
+    genStoreLocalVar($<label>3 - 1, Type_INTEGER);
+  }
+  DO Label
   statements
-  END DO { if ($<boolVal>3) removeLoopVar(); }
+  END DO Label {
+    if ($<label>3) removeLoopVar();
+    backpatch($11.nextlist, $14);
+    genLoadLocalVar($<label>3 - 1, Type_INTEGER);
+    genConstCode($7);
+    genCode("  if_icmpge ",0,-2);
+    int br = genInsertPoint();
+    if ($<label>3) {
+      genCode("  iinc ",0,0); genIntCode($<label>3 - 1); genCode(" 1\n",0,0);
+    }
+    genCode("  goto ",0,0);
+    int loop = genInsertPoint();
+    backpatch(makePatchList(loop), $10);
+    $$.nextlist = makePatchList(br);
+  }
 ;
 
 return_stmt: RETURN boolean_expr SEMICOLON

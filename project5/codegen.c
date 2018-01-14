@@ -316,6 +316,7 @@ void genFunctionCall(struct SymTableEntry *fun, const char *funname, struct Patc
 }
 
 void genLoadLocalVar(int tmpVarId, enum TypeEnum type) {
+  if (tmpVarId < 0) { genCode("  iconst_0\n",1,+1); return; }
   switch (type) {
     case Type_BOOLEAN: case Type_INTEGER:
       genCode("  iload",1,+1); break;
@@ -333,6 +334,7 @@ void genLoadLocalVar(int tmpVarId, enum TypeEnum type) {
 }
 
 void genStoreLocalVar(int tmpVarId, enum TypeEnum type) {
+  if (tmpVarId < 0) { genCode("  pop\n",0,-1); return; }
   switch (type) {
     case Type_BOOLEAN: case Type_INTEGER:
       genCode("  istore",0,-1); break;

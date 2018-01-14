@@ -41,7 +41,7 @@ void startParamDecl(void);
 
 // name is not copied
 struct PairName addSymbol(char *name, enum SymbolKind kind);
-Bool addLoopVar(char *name);
+int addLoopVar(char *name);
 void removeLoopVar(void);
 
 void endVarDecl(struct Type *type);

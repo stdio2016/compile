@@ -45,6 +45,8 @@ void genProgMain(void);
 void genFunctionEnd();
 
 void genFunctionCall(struct SymTableEntry *e, const char *funname, struct PatchList *list, struct Expr *args);
+void genLoadLocalVar(int tmpVarId, enum TypeEnum type);
+void genStoreLocalVar(int tmpVarId, enum TypeEnum type);
 void genLoadVar(const char *varname);
 void genStoreVar(const char *varname);
 void genLoadArray(struct Expr *expr);
