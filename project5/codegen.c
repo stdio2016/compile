@@ -90,14 +90,16 @@ void BoolExpr_toTFlist(struct BoolExpr *expr) {
 
 void BoolExpr_toImmed(struct BoolExpr *expr) {
   expr->isTFlist = False;
+  int i = genLabel();
   genCode("  iconst_1\n",1,+1);
   genCode("  goto ",0,0);
-  int i = genLabel();
-  struct PatchList *p = makePatchList(i);
   backpatch(expr->truelist, i);
+  int j = genLabel();
+  struct PatchList *p = makePatchList(j);
   genCode("  iconst_0\n",1,0);
-  backpatch(expr->falselist, genLabel());
-  backpatch(p, labelCount);
+  int k = genLabel();
+  backpatch(expr->falselist, j);
+  backpatch(p, k);
 }
 
 int genLabel() {
@@ -497,13 +499,13 @@ void backpatch(struct PatchList *list, int label) {
   struct PatchList *p = list;
   do {
     char buf[25];
-    sprintf(buf, "Label%d\n", label);
+    sprintf(buf, "Label%d\n", label+1);
     genCodeAt(buf, p->addr);
     struct PatchList *q = p->next;
     free(p);
     p = q;
   } while (p != list);
-  codeArray[label].hasLabel = True;
+  codeArray[label+1].hasLabel = True;
 }
 
 struct PatchList *mergePatchList(struct PatchList *p1, struct PatchList *p2) {

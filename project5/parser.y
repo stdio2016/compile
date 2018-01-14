@@ -74,6 +74,8 @@ struct Type *funcReturnType = NULL;
 %type<op> mul_op plus_op relop
 %type<args> arg_list arguments
 %type<label> Mark Label
+%type<stmt> statements statement compound_stmt conditional_stmt while_stmt for_stmt IfGoto
+%type<boolExpr> condition
 %%
 
 program		: programname SEMICOLON
@@ -105,7 +107,7 @@ programname	: identifier
 
 programbody	: var_or_const_decls  function_decls
 		{ pushScope(); genProgMain(); } compound_stmt
-		{ genCode("  return\n",0,0); genFunctionEnd(); }
+		{ backpatch($4.nextlist,genLabel()); genCode("  return\n",0,0); genFunctionEnd(); }
 		;
 
 var_or_const_decls:
@@ -144,10 +146,10 @@ function_decl:
     endFuncDecl($6, $<pairName>1.success);
     genFunctionStart($<pairName>1.name);
   }
-  compound_stmt END IDENT
+  compound_stmt { backpatch($9.nextlist,genLabel()); } END IDENT
   {
     // popScope is done by compound_stmt
-    if (strcmp($<pairName>1.name, $11) != 0) {
+    if (strcmp($<pairName>1.name, $12) != 0) {
       semanticError("function end ID inconsist with the beginning ID\n");
     }
     // append return at end
@@ -161,7 +163,7 @@ function_decl:
       genCode("  return\n",0,0);
     genFunctionEnd();
     free($<pairName>1.name);
-    free($11);
+    free($12);
     destroyType(funcReturnType);
     funcReturnType = NULL;
   }
@@ -196,22 +198,27 @@ formal_arg: { startParamDecl(); }
 ;
 
 compound_stmt:
-  BEGIN_  var_or_const_decls  statements END { popScope(Opt_D); }
+  BEGIN_  var_or_const_decls  statements END
+  { popScope(Opt_D); $$.nextlist = $3.nextlist; }
 ;
 
 statements:
-  /* empty */
-| statements statement
+  /* empty */ { $$.nextlist = NULL; }
+| statements Label statement
+  {
+    backpatch($1.nextlist, $2);
+    $$.nextlist = $3.nextlist;
+  }
 ;
 
 statement:
-  { pushScope(); } compound_stmt
-| simple_stmt
+  { pushScope(); } compound_stmt { $$.nextlist = $2.nextlist; }
+| simple_stmt  { $$.nextlist = NULL; }
 | conditional_stmt
 | while_stmt
 | for_stmt
-| return_stmt
-| procedure_call
+| return_stmt { $$.nextlist = NULL; }
+| procedure_call { $$.nextlist = NULL; }
 ;
 
 simple_stmt:
@@ -514,22 +521,50 @@ arguments:
 ;
 
 conditional_stmt:
-  IF condition THEN
-  statements
-  ELSE
+  IF condition THEN Label
+  statements IfGoto
+  ELSE Label
   statements
   END IF
+  {
+    if (!$2.isTFlist) {
+      genCodeAt("  ifeq ",$4);
+      genCode("",0,-1); // move stack pointer back
+      $2.truelist = NULL; // fallthrough
+      $2.falselist = makePatchList($4);
+    }
+    backpatch($2.truelist, $4);
+    backpatch($2.falselist, $8);
+    struct PatchList *tmp = mergePatchList($5.nextlist, $6.nextlist);
+    $$.nextlist = mergePatchList(tmp, $9.nextlist);
+    destroyExpr($2.expr);
+  }
 |
-  IF condition THEN
+  IF condition THEN Label
   statements
   END IF
+  {
+    if (!$2.isTFlist) {
+      genCodeAt("  ifeq ",$4);
+      genCode("",0,-1); // move stack pointer back
+      $2.truelist = NULL; // fallthrough
+      $2.falselist = makePatchList($4);
+    }
+    backpatch($2.truelist, $4);
+    $$.nextlist = mergePatchList($2.falselist, $5.nextlist);
+    destroyExpr($2.expr);
+  }
 ;
+
+IfGoto: {
+  genCode("  goto ",0,0);
+  $$.nextlist = makePatchList(genInsertPoint());
+};
 
 condition:
   boolean_expr {
-    //TODO
     conditionCheck($1.expr, "if");
-    destroyExpr($1.expr);
+    $$ = $1;
   }
 ;
 
