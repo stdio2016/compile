@@ -427,7 +427,6 @@ boolean_factor:
   relation_expr
 | NOT boolean_factor
   {
-    //TODO not
     $$ = ExprToBoolExpr(createExpr(Op_NOT, $2.expr, NULL));
     unaryOpCheck($$.expr);
     $$.isTFlist = $2.isTFlist;
@@ -569,13 +568,26 @@ condition:
 ;
 
 while_stmt:
-  WHILE boolean_expr {
+  WHILE Label boolean_expr {
     //TODO
-    conditionCheck($2.expr, "while");
-    destroyExpr($2.expr);
-  } DO
+    conditionCheck($3.expr, "while");
+    destroyExpr($3.expr);
+  } DO Label
   statements
-  END DO
+  END DO {
+    if (!$3.isTFlist) {
+      genCodeAt("  ifeq ",$6);
+      genCode("",0,-1); // move stack pointer back
+      $3.truelist = NULL; // fallthrough
+      $3.falselist = makePatchList($6);
+    }
+    genCode("  goto ",0,0);
+    int i = genInsertPoint();
+    struct PatchList *tmp = mergePatchList(makePatchList(i), $7.nextlist);
+    backpatch(tmp, $2);
+    backpatch($3.truelist, $6);
+    $$.nextlist = $3.falselist;
+  }
 ;
 
 for_stmt:
