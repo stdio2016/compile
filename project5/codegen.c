@@ -244,6 +244,15 @@ void genFunctionStart(const char *funname) {
   inFunction = True;
   StrBuf_clear(&codeArray[0].buf);
   codeArray[0].hasLabel = False;
+  extern size_t stackTop; // defined in symtable.c
+  size_t from = stackTop, i;
+  extern struct SymTableEntry **stack;
+  while (from > 0 && stack[from-1]->kind == SymbolKind_parameter) {
+    from--;
+  }
+  for (i = from; i < stackTop; i++) {
+    genParamPassByValue(stack[i]->attr.tmpVarId, stack[i]->type);
+  }
 }
 
 void genProgMain() {
@@ -263,8 +272,8 @@ void genProgMain() {
   genCode("  putstatic ", 0, 0);
   genCode(progClassName, 0, 0);
   genCode("/_sc Ljava/util/Scanner;\n", 0, -1);
-  int i;
-  extern int stackTop; // defined in symtable.c
+  size_t i;
+  extern size_t stackTop; // defined in symtable.c
   extern struct SymTableEntry **stack;
   for (i = 0; i < stackTop; i++) {
     if (stack[i]->kind == SymbolKind_variable)
@@ -561,6 +570,60 @@ void genLocalVarInit(int tmpVarId, struct Type *type) {
       genStringArrayInit_IsHard(tmpVarId, type);
     }
   }
+}
+
+void genParamPassByValue(int paramId, struct Type *type) {
+  int dim = 0, i;
+  struct Type *t = type;
+  while (t->type == Type_ARRAY) {
+    t = t->itemType;
+    dim++;
+  }
+  int *s = malloc(sizeof(int) * dim);
+  t = type;
+  for (i = 0; i < dim; i++) {
+    s[i] = t->upperBound - t->lowerBound + 1;
+    t = t->itemType;
+  }
+  int a_n = localVarCount - 1, b_n = localVarCount + dim - 1;
+  int i_n = localVarCount + dim * 2 - 1;
+  genCreateArray(type);
+  genStoreLocalVar(b_n + 0, Type_ARRAY);
+  for (i = 0; i < dim-1; i++) {
+    genCode("  iconst_0\n",1,+1);
+    genStoreLocalVar(i_n + i, Type_INTEGER);
+    genCode("Init_",0,0); genIntCode(initLabelCount + i); genCode(":\n",0,0);
+
+    genLoadLocalVar(i == 0 ? paramId : a_n + i , Type_ARRAY);
+    genLoadLocalVar(i_n + i, Type_INTEGER);
+    genCode("  aaload\n",0,-1);
+    genStoreLocalVar(a_n + i+1, Type_ARRAY);
+
+    genLoadLocalVar(b_n + i, Type_ARRAY);
+    genLoadLocalVar(i_n + i, Type_INTEGER);
+    genCode("  aaload\n",0,-1);
+    genStoreLocalVar(b_n + i+1, Type_ARRAY);
+  }
+  genLoadLocalVar(dim == 1 ? paramId : a_n + dim-1, Type_ARRAY);
+  genCode("  iconst_0\n",1,+1);
+  genLoadLocalVar(b_n + dim-1, Type_ARRAY);
+  genCode("  iconst_0\n",1,+1);
+  struct Constant c; c.type = Type_INTEGER;
+  c.integer = s[dim-1];
+  genConstCode(c);
+  genCode("  invokestatic java/lang/System/arraycopy(Ljava/lang/Object;ILjava/lang/Object;II)V\n",0,-5);
+  for (i = dim-2; i >= 0; i--) {
+    genCode("  iinc ",0,0); genIntCode(i_n + i); genCode(" 1\n",0,0);
+    genLoadLocalVar(i_n + i, Type_INTEGER);
+    struct Constant c; c.type = Type_INTEGER;
+    c.integer = s[i];
+    genConstCode(c);
+    genCode("  if_icmpne Init_",0,-2); genIntCode(initLabelCount + i); genCode("\n",0,0);
+  }
+  free(s);
+  genLoadLocalVar(b_n, Type_ARRAY);
+  genStoreLocalVar(paramId, Type_ARRAY);
+  initLabelCount += dim - 1;
 }
 
 struct PatchList *makePatchList(int addr) {

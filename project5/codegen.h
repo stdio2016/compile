@@ -57,6 +57,7 @@ void genCreateArray(struct Type *type);
 void genGlobalVarCode(const char *name, struct Type *type);
 void genGlobalVarInit(const char *name, struct Type *type);
 void genLocalVarInit(int tmpVarId, struct Type *type);
+void genParamPassByValue(int paramId, struct Type *type);
 
 struct PatchList *makePatchList(int addr);
 void destroyPatchList(struct PatchList *list);
