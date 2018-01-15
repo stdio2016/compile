@@ -454,6 +454,29 @@ void genGlobalVarCode(const char *name, struct Type *type) {
   fputs("\n", codeOut);
 }
 
+void genCreateArray(struct Type *type) {
+  struct Type *t = type;
+  int dim = 0;
+  while (t->type == Type_ARRAY) {
+    struct Constant c; c.type = Type_INTEGER;
+    c.integer = t->upperBound - t->lowerBound + 1;
+    genConstCode(c);
+    t = t->itemType;
+    dim++;
+  }
+  if (dim > 1) { // multi dimension
+    genCode("  multianewarray ",0,-dim+1);
+    genTypeCode(type); genCode(" ",0,0);
+    genIntCode(dim); genCode("\n",0,0);
+  }
+  else if (t->type == Type_BOOLEAN) genCode("  newarray boolean\n",0,0);
+  else if (t->type == Type_INTEGER) genCode("  newarray int\n",0,0);
+  else if (t->type == Type_REAL) genCode("  newarray float\n",0,0);
+  else if (t->type == Type_STRING) {
+    genCode("  anewarray java/lang/String\n",0,0);
+  }
+}
+
 void genGlobalVarInit(const char *name, struct Type *type) {
   if (type->type == Type_STRING) {
     genCode("  ldc \"\"\n",1,+1);
@@ -474,7 +497,7 @@ void genLocalVarInit(int tmpVarId, struct Type *type) {
   else if (type->type == Type_REAL) genCode("  fconst_0\n",1,+1);
   else if (type->type == Type_STRING) genCode("  ldc \"\"\n",1,+1);
   else if (type->type == Type_ARRAY) {
-    //TODO genCreateArray(type);
+    genCreateArray(type);
   }
   genStoreLocalVar(tmpVarId, type->type);
 }

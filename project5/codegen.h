@@ -52,6 +52,7 @@ void genStoreVar(const char *varname);
 void genLoadArray(struct Expr *expr);
 void genStoreArray(struct Expr *expr);
 void genArrayIndexShift(int offset);
+void genCreateArray(struct Type *type);
 
 void genGlobalVarCode(const char *name, struct Type *type);
 void genGlobalVarInit(const char *name, struct Type *type);
