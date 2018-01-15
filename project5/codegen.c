@@ -16,7 +16,7 @@ struct LabeledStringBuffer {
 
 // generator state
 static struct LabeledStringBuffer *codeArray;
-static int codeArraySize, codeArrayCap, labelCount;
+static int codeArraySize, codeArrayCap, labelCount, initLabelCount;
 int stackLimit, virtStackPos;
 static Bool inFunction = False;
 extern size_t localVarCount, localVarLimit; // defined in symtable.c
@@ -235,6 +235,7 @@ void genConstCode(struct Constant val) {
 
 void genFunctionStart(const char *funname) {
   labelCount = 0;
+  initLabelCount = 0;
   stackLimit = 0;
   virtStackPos = 0;
   fprintf(codeOut, ".method public static ");
@@ -247,6 +248,7 @@ void genFunctionStart(const char *funname) {
 
 void genProgMain() {
   labelCount = 0;
+  initLabelCount = 0;
   stackLimit = 0;
   virtStackPos = 0;
   fputs(".method public static main([Ljava/lang/String;)V\n", codeOut);
@@ -349,6 +351,8 @@ void genStoreLocalVar(int tmpVarId, enum TypeEnum type) {
   else genCode(" ",0,0); // long version
   genIntCode(tmpVarId);
   genCode("\n",0,0);
+  if (tmpVarId >= localVarLimit)
+    localVarLimit = tmpVarId+1;
 }
 
 void genStoreGlobalVar(const char *varname, struct Type *type) {
@@ -481,9 +485,44 @@ void genCreateArray(struct Type *type) {
   }
 }
 
-void genStringArrayInit_IsHard(int varId) {
-  // TODO
-  puts("TODO string array is not yet supported");
+void genStringArrayInit_IsHard(int varId, struct Type *type) {
+  int dim = 0, i;
+  struct Type *t = type;
+  while (t->type == Type_ARRAY) {
+    t = t->itemType;
+    dim++;
+  };
+  int i_n = varId + dim, a_n = varId;
+  for (i = 0; i < dim; i++) {
+    genCode("  iconst_0\n",1,+1);
+    genStoreLocalVar(i_n + i, Type_INTEGER);
+    genCode("Init_",0,0); genIntCode(initLabelCount + i); genCode(":\n",0,0);
+    genLoadLocalVar(a_n + i, Type_ARRAY);
+    genLoadLocalVar(i_n + i, Type_INTEGER);
+    if (i < dim-1) {
+      genCode("  aaload\n",0,-1);
+      genStoreLocalVar(a_n + i+1, Type_ARRAY);
+    }
+    else {
+      genCode("  ldc \"\"\n  aastore\n",1,+1-3);
+    }
+  }
+  int *s = malloc(sizeof(int) * dim);
+  t = type;
+  for (i = 0; i < dim; i++) {
+    s[i] = t->upperBound - t->lowerBound + 1;
+    t = t->itemType;
+  }
+  for (i = dim-1; i >= 0; i--) {
+    genCode("  iinc ",0,0); genIntCode(i_n + i); genCode(" 1\n",0,0);
+    genLoadLocalVar(i_n + i, Type_INTEGER);
+    struct Constant c; c.type = Type_INTEGER;
+    c.integer = s[i];
+    genConstCode(c);
+    genCode("  if_icmpne Init_",0,-2); genIntCode(initLabelCount + i); genCode("\n",0,0);
+  }
+  free(s);
+  initLabelCount += dim;
 }
 
 void genGlobalVarInit(const char *name, struct Type *type) {
@@ -497,9 +536,9 @@ void genGlobalVarInit(const char *name, struct Type *type) {
     while (inner->type == Type_ARRAY)
       inner = inner->itemType;
     if (inner->type == Type_STRING) {
-      genStoreLocalVar(0, Type_ARRAY);
-      genStringArrayInit_IsHard(0);
-      genLoadLocalVar(0, Type_ARRAY);
+      genStoreLocalVar(1, Type_ARRAY);
+      genStringArrayInit_IsHard(1, type);
+      genLoadLocalVar(1, Type_ARRAY);
     }
     genStoreGlobalVar(name, type);
   }
@@ -519,7 +558,7 @@ void genLocalVarInit(int tmpVarId, struct Type *type) {
     while (inner->type == Type_ARRAY)
       inner = inner->itemType;
     if (inner->type == Type_STRING) {
-      genStringArrayInit_IsHard(tmpVarId);
+      genStringArrayInit_IsHard(tmpVarId, type);
     }
   }
 }
