@@ -569,7 +569,6 @@ condition:
 
 while_stmt:
   WHILE Label boolean_expr {
-    //TODO
     conditionCheck($3.expr, "while");
     destroyExpr($3.expr);
   } DO Label
