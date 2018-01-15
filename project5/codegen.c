@@ -573,6 +573,7 @@ void genLocalVarInit(int tmpVarId, struct Type *type) {
 }
 
 void genParamPassByValue(int paramId, struct Type *type) {
+  if (type->type != Type_ARRAY) return ;
   int dim = 0, i;
   struct Type *t = type;
   while (t->type == Type_ARRAY) {

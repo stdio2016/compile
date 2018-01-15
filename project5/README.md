@@ -11,6 +11,9 @@
 5. 字串相連
 6. 可以使用陣列和字串變數！
 7. 函數的陣列引數採 pass by value
+8. if...else、for 迴圈、while 迴圈
+9. 字串變數初始值會設成空字串
+10. 在比較大小、四則運算、函數的引數和設定變數時可以把整數 (integer) 轉成實數 (real)
 
 ## 新增檔案
 有 StringBuffer.c、StringBuffer.h、codegen.c 和 codegen.h
