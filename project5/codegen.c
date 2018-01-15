@@ -481,13 +481,27 @@ void genCreateArray(struct Type *type) {
   }
 }
 
+void genStringArrayInit_IsHard(int varId) {
+  // TODO
+  puts("TODO string array is not yet supported");
+}
+
 void genGlobalVarInit(const char *name, struct Type *type) {
   if (type->type == Type_STRING) {
     genCode("  ldc \"\"\n",1,+1);
     genStoreGlobalVar(name, type);
   }
   else if (type->type == Type_ARRAY) {
-    //TODO genCreateArray(type);
+    genCreateArray(type);
+    struct Type *inner = type;
+    while (inner->type == Type_ARRAY)
+      inner = inner->itemType;
+    if (inner->type == Type_STRING) {
+      genStoreLocalVar(0, Type_ARRAY);
+      genStringArrayInit_IsHard(0);
+      genLoadLocalVar(0, Type_ARRAY);
+    }
+    genStoreGlobalVar(name, type);
   }
   // integer, real and boolean doesn't need init
 }
@@ -500,6 +514,14 @@ void genLocalVarInit(int tmpVarId, struct Type *type) {
     genCreateArray(type);
   }
   genStoreLocalVar(tmpVarId, type->type);
+  if (type->type == Type_ARRAY) {
+    struct Type *inner = type;
+    while (inner->type == Type_ARRAY)
+      inner = inner->itemType;
+    if (inner->type == Type_STRING) {
+      genStringArrayInit_IsHard(tmpVarId);
+    }
+  }
 }
 
 struct PatchList *makePatchList(int addr) {
