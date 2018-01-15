@@ -351,6 +351,16 @@ void genStoreLocalVar(int tmpVarId, enum TypeEnum type) {
   genCode("\n",0,0);
 }
 
+void genStoreGlobalVar(const char *varname, struct Type *type) {
+  genCode("  putstatic ",0,-1);
+  genCode(progClassName,0,0);
+  genCode("/",0,0);
+  genCode(varname,0,0);
+  genCode(" ",0,0);
+  genTypeCode(type);
+  genCode("\n",0,0);
+}
+
 void genLoadVar(const char *varname) {
   struct SymTableEntry *e = getSymEntry(varname);
   if (e == NULL) {
@@ -391,13 +401,7 @@ void genStoreVar(const char *varname) {
     return;
   }
   else if (e->level == 0) { // global var
-    genCode("  putstatic ",0,-1);
-    genCode(progClassName,0,0);
-    genCode("/",0,0);
-    genCode(varname,0,0);
-    genCode(" ",0,0);
-    genTypeCode(e->type);
-    genCode("\n",0,0);
+    genStoreGlobalVar(varname, e->type);
   }
   else { // local var
     genStoreLocalVar(e->attr.tmpVarId, e->type->type);
@@ -480,11 +484,7 @@ void genCreateArray(struct Type *type) {
 void genGlobalVarInit(const char *name, struct Type *type) {
   if (type->type == Type_STRING) {
     genCode("  ldc \"\"\n",1,+1);
-    genCode("  putstatic ",0,-1);
-    genCode(progClassName,0,0);
-    genCode("/",0,0);
-    genCode(name,0,0);
-    genCode(" Ljava/lang/String;\n",0,0);
+    genStoreGlobalVar(name, type);
   }
   else if (type->type == Type_ARRAY) {
     //TODO genCreateArray(type);
