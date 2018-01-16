@@ -22,17 +22,17 @@ static Bool inFunction = False;
 extern size_t localVarCount, localVarLimit; // defined in symtable.c
 
 void initCodeGen(const char *filename) {
-  size_t n = strlen(filename), i, dot = n;
+  size_t n = strlen(filename), i, dot = n, slash = 0;
   asmName = malloc(n+3); // filename '.' 'j' '\0'
   for (i = 0; filename[i]; i++) {
     if (filename[i] == '.') dot = i;
-    if (filename[i] == '/') dot = n;
+    if (filename[i] == '/') { dot = n; slash = i+1; }
   }
   if (strcmp(&filename[dot], ".j") == 0) { // input file is .j
     dot += 2;
   }
-  strcpy(asmName, filename);
-  strcpy(asmName+dot, ".j");
+  strcpy(asmName, filename + slash);
+  strcpy(asmName+dot-slash, ".j");
   codeOut = fopen(asmName, "w");
   codeArrayCap = 5;
   codeArraySize = 1;
