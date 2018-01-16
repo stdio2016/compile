@@ -1,6 +1,6 @@
 # parser
 
-本程式可以檢查一個 P 語言程式是否符合語法，還有檢查語意
+這是 P 語言編譯器，可以把 P 程式編譯成 Jasmin 能支援的 Java assembly。
 
 ## 功能
 
@@ -43,14 +43,22 @@
 
 Ubuntu 17.10 和系計中的 Linux 主機 (我只測試過這兩個)
 
-## 執行方法
+## 編譯本程式的方法
 
-首先，你需要安裝 flex 和 bison。
+首先，你需要安裝 flex、bison、Java 和 Jasmin。
 
 然後進入這個資料夾，在命令列輸入 `make`，就可以編譯這個程式
 
+要清除編譯中間檔，請在命令列輸入 `make clean`
+
+Jasmin 用來組譯本程式的輸出，不需要 Jasmin 就可以編譯本程式，但是如果你想要執行 P 程式，那就一定要裝 Jasmin。而且 Jasmin 是 Java 程式，所以你也要裝 Java，不過不用 Java SDK
+
+## 編譯器用法
+
 這個程式的命令列格式是 `./parser <檔案名>`
 
-執行後，如果檔案是語法正確的 P 程式，就會顯示 `There is no syntactic and semantic error!`
+執行後，如果檔案是語法正確的 P 程式，就會顯示 `There is no syntactic and semantic error!`，並產生一個 .j 檔
 
-要清除編譯中間檔，請在命令列輸入 `make clean`
+要執行 P 程式，你還要再用 Jasmin 來組譯，Jasmin 的命令列格式是 `java -jar <jasmin.jar 的檔案路徑> <P 程式名>.j`，如果有用 sudo 安裝 Jasmin，就可以用 `jasmin <P 程式名>.j`
+
+然後用 Java 跑跑看，Java 的用法是 `java <P 程式名 (不要加附檔名)>`
