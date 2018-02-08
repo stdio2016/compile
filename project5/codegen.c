@@ -43,6 +43,7 @@ void initCodeGen(const char *filename) {
 }
 
 void genProgStart() {
+  fprintf(codeOut, ".source %s.p\n", progClassName);
   fprintf(codeOut, ".class public %s\n", progClassName);
   fprintf(codeOut, ".super java/lang/Object\n");
   fprintf(codeOut, "\n");
@@ -242,8 +243,12 @@ void genFunctionStart(const char *funname) {
   genFuncTypeCode(getFunctionEntry(funname), funname);
   fputs("\n", codeOut);
   inFunction = True;
+  extern int linenum;
   StrBuf_clear(&codeArray[0].buf);
   codeArray[0].hasLabel = False;
+  genCode(".line ",0,0);
+  genIntCode(linenum);
+  genCode("\n",0,0);
   extern size_t stackTop; // defined in symtable.c
   size_t from = stackTop, i;
   extern struct SymTableEntry **stack;

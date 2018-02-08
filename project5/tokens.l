@@ -207,4 +207,10 @@ void dumpInAsmOut() {
   genCode(": ", 0, 0);
   genCode(buf, 0, 0);
   genCode("\n", 0, 0);
+  extern int curScopeLevel;
+  if (curScopeLevel > 0) {
+    genCode(".line ",0,0);
+    genIntCode(linenum+1);
+    genCode("\n",0,0);
+  }
 }
